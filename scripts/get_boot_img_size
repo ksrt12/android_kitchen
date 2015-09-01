@@ -1,0 +1,44 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+
+#
+# This script has one optional parameter:
+#
+# $1 = folder containing boot.img
+#
+
+base_dir=`pwd`
+
+if [ "$1" == "" ]
+ then
+  if [ -d BOOT-EXTRACTED ]
+   then cd WORKING_*
+   else cd bootimg_*
+    if [ ! -e boot.img ]
+    then cd $base_dir
+    fi
+  fi
+fi
+
+if [ -e boot.img ]
+then
+boot_img_size=`ls -lh boot.img | sed -e 's/.* [ ]*\([0-9]*\.[0-9]*[MK]\) .*/\1/g'`
+else
+boot_img_size=-
+fi
+cd $base_dir
+
+echo $boot_img_size
+

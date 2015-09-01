@@ -1,0 +1,49 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%.  Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+clear 
+
+
+if [ ! -d WORKING_* ]
+then
+  echo "Рабочая папка не найдена!"
+  exit 0
+fi
+if [ -d bootimg_* ]
+then
+  echo "Папка bootimg_* найдена"
+fi
+if [ -d BOOT-EXTRACTED ]
+then
+  echo "Папка BOOT-EXTRACTED найдена"
+fi
+  echo
+  echo "---------------------------------------------------------------"
+  echo  
+  echo "Ensure your BOOT-EXTRACTED folder has the kernel and ramdisk"
+  echo "files that you need."
+  echo 
+  echo "Kernel  = zImage (sometimes referred to as boot.img-kernel)"
+  echo "Ramdisk = boot.img-ramdisk folder"
+  echo
+  echo "---------------------------------------------------------------"
+  echo
+  echo "These files will be re-packed into a boot.img that will be"
+  echo "copied to your current working folder."
+  echo 
+  echo "---------------------------------------------------------------"
+  echo 
+  echo -n "<Нажмите ENTER> "
+  read enterKey
+

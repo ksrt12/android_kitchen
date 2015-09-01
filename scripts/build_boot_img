@@ -1,0 +1,407 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has three optional parameters:
+#
+# $1 = page size / kernel offset in boot.img (in decimal)
+# $2 = kernel base offset (in hexadecimal, e.g. 0x200000; needs $1 defined)
+# $3 = command line (needs $1 and $2 defined)
+#
+
+echo
+
+if [ -d BOOT-EXTRACTED ]
+then
+  bootimgpath=BOOT-EXTRACTED
+  else
+  if [ -d bootimg_* ]
+    then
+    bootimgpath=bootimg_*
+    else
+    echo " Папка с ядром не найдена!"
+    exit 0
+  fi
+fi
+
+echo " Найдена папка $bootimgpath, проверка контента ..."
+
+if [ -d $bootimgpath/boot.img-ramdisk ]
+then
+  echo " Найден boot.img-ramdisk"
+
+  if [ -e $bootimgpath/zImage ]
+  then
+    echo " Найден zImage"
+  else
+    echo " Не найден zImage"
+    exit 0
+  fi
+
+else
+  echo " Папка $bootimgpath/boot.img-ramdisk не найдена!"
+  exit 0
+fi
+
+
+if [ -d WORKING_* ]
+then
+  echo " Рабочая папка найдена"
+else
+  echo " Рабочая папка не найдена"
+  exit 0
+fi
+
+
+
+if [ "$1" == "" ]
+then
+
+  #
+  # Determine the kernel offset to be used in the new boot.img, 
+  # based on the current boot.img or /boot folder.
+  #
+  size_boot=`scripts/get_boot_img_size`
+  cd WORKING_*
+
+  if [ -e boot.img ] 
+  then
+   
+    cd ..
+    scripts/check_kernel_offset
+    res=$?
+
+    if [ "$res" != "0" ]
+    then
+      exit 0
+    fi
+
+  else
+
+    if [ ! -e boot/initrd.gz ] || [ ! -e boot/zImage ]
+    then
+      echo "boot.img не найден в рaбочей папке!"
+      cd ..
+      exit 0
+    else
+
+      # Using a fake base address and command line to create the boot.img, since
+      # we don't have a boot.img and are using the NAND method; boot.img won't 
+      # be in final NAND ROM.
+
+      base=0x11800000     
+      cmd_line="dsixda NAND"
+
+      cd ..
+    fi
+  fi
+
+else
+
+  #
+  # Using hard-coded values 
+  #
+
+  scripts/set_kernel_offset_files $1
+
+  if [ "$2" != "" ]
+  then
+    base=$2
+    
+    if [ "$3" != "" ]
+    then
+      cmd_line=$3
+    fi
+  fi
+
+fi
+
+
+
+#
+# Check for MT65xx
+#
+
+cd WORKING_*
+working_folder=`pwd`
+cd ..
+dec_offset=`scripts/get_boot_img_page_size $working_folder`
+scripts/check_mt65xx_bootimg $working_folder $dec_offset 1>/dev/null
+mt65xx=$?
+
+
+
+#
+# Compile mkboot*
+#
+
+if [ "$mt65xx" == "1" ]
+then
+  mkbootimg_src=mkbootimg_mt65xx.c
+else
+  mkbootimg_src=mkbootimg.c
+fi
+mkbootimg_out=mkbootimg
+
+if [ `uname | grep CYGWIN` ]
+then
+  mkbootfs_file=mkbootfs.exe
+  mkbootimg_file=$mkbootimg_out.exe
+else
+  mkbootfs_file=mkbootfs
+  mkbootimg_file=$mkbootimg_out
+fi
+
+
+if [ -e tools/mkboot/$mkbootfs_file ]
+then
+  echo " Найден $mkbootfs_file"
+else
+  echo
+  echo " Компиляция mkbootfs ..."
+  cd tools/mkboot
+  gcc -o mkbootfs mkbootfs.c 2>/dev/null
+  cd ../..
+
+  if [ -e tools/mkboot/$mkbootfs_file ]
+  then
+    echo " mkbootfs успешно скомпилирован"
+  else
+    echo "Ошибка: mkbootfs скомпилирован неудачно!"
+    exit 0   
+  fi
+fi
+
+
+if [ -e tools/mkboot/$mkbootimg_file ]
+then
+  rm -f $mkbootimg_file
+fi
+
+echo
+echo " Компиляция mkbootimg ..."
+cd tools/mkboot
+gcc -c rsa.c
+gcc -c sha.c
+gcc rsa.o sha.o $mkbootimg_src -w -o $mkbootimg_out
+rm *.o
+cd ../..
+
+if [ -e tools/mkboot/$mkbootimg_file ]
+then
+  echo " $mkbootimg_out успешно скомпилирован"
+else
+  echo "Ошибка: $mkbootimg_out скомпилирован неудачно!"
+  exit 0
+fi    
+
+
+cp tools/mkboot/$mkbootfs_file $bootimgpath/
+cp tools/mkboot/$mkbootimg_file $bootimgpath/
+cd $bootimgpath
+
+
+#
+# Run mkbootfs
+#
+
+echo 
+echo " Создание архива ramdisk cpio ..."
+./$mkbootfs_file boot.img-ramdisk | gzip > ramdisk.gz
+
+
+
+
+cd ..
+cd WORKING_*
+
+if [ -e boot.img ]
+then
+
+  cd ..
+  echo
+
+  #
+  # Determine kernel base address before running mkbootimg
+  #
+
+  if [ "$base" == "" ]
+  then
+  echo " Определение базового адреса ядра ... "
+  base=`scripts/get_kernel_base_addr`
+  echo " Использовать найденный базовый"
+  echo " адрес ядра $base ?(y/n, deafult - y)"
+  read do_base_ker_addr
+    if [ "$do_base_ker_addr" == "n" ]
+    then
+      echo " Введите новый базовый адрес ядра:"
+      read new_base_ker_addr
+      base=$new_base_ker_addr
+    fi
+  fi
+
+  echo " Использование базового адреса ядра $base"
+
+ 
+  #
+  #ramdisk load address
+  #
+
+  echo
+  echo " Определение загрузочного адреса ramdisk'а ... "
+  ramdisk_addr=`scripts/get_ramdisk_addr`
+  echo " Использовать найденный загрузочный"
+  echo " адрес ramdisk'а $ramdisk_addr ?(y/n, deafult - y)"
+  read do_ramdisk_addr
+    if [ "$do_ramdisk_addr" == "n" ]
+    then
+	echo " Введите новый загрузочный адрес ramdisk'а:"
+	read new_ramdisk_addr
+	ramdisk_addr=$new_ramdisk_addr
+    fi
+  echo " Использование загрузочного адреса ramdisk'а $ramdisk_addr"
+
+  #
+  # command line
+  #
+
+	echo
+  if [ "$3" == "" ]  && [ "$1" == "" ]
+  then
+    echo " Определение параметра командной строки ..."
+    cmd_line=`scripts/get_cmdline`
+    echo " Использовать найденный cmdline?"
+    echo " $cmd_line (y/n, deafult - y)"
+    read do_cmd_line
+    if [ "$do_cmd_line" == "n" ]
+    then
+	echo " Введите новый параметр командной строки:"
+	read new_cmd_line
+	cmd_line=new_cmd_line
+    fi
+  fi
+
+  if [ "$cmd_line" == "" ]
+  then
+    echo " Нет cmdline"
+  else
+    echo " Использование cmdline: $cmd_line"
+  fi    
+
+else
+  cd ..
+fi  
+
+
+#################################################
+#
+# Run mkbootimg to build new boot.img
+#
+#################################################
+
+cd $bootimgpath
+
+echo
+echo " Сборка нового boot.img ..."
+
+ramdisk_params=""
+if [ "$ramdisk_addr" != "" ]
+then
+  ramdisk_params="--ramdiskaddr $ramdisk_addr"
+fi
+
+if [ "$cmd_line" == "" ]
+then
+  ./$mkbootimg_file --kernel zImage --ramdisk ramdisk.gz -o newBoot.img --base $base $ramdisk_params
+else
+  ./$mkbootimg_file --kernel zImage --ramdisk ramdisk.gz --cmdline "$cmd_line" -o newBoot.img --base $base $ramdisk_params
+fi
+
+
+if [ -e newBoot.img ]
+then
+  echo
+  echo " newBoot.img создан"
+  if  [ "$bootimgpath" == "bootimg_*" ]
+  then
+  mv -f ../$bootimgpath/newBoot.img ../boot.img
+  echo " Он расположен в папке кухни"
+  else
+  echo " Перемещение в рабочую папку boot.img"
+  cd ../WORKING_*
+  mv -f ../$bootimgpath/newBoot.img boot.img
+  fi
+  #
+  # Get original size of boot.img
+  #
+  cd ..
+  size_orig=`scripts/get_boot_img_size`
+  if [ "$size_orig" != "" ]
+  then
+    if  [ "$bootimgpath" == "bootimg_*" ]
+    then cd bootimg_*
+      if [ -e boot.img ]
+      then rm boot.img
+      cd ..
+      fi
+    fi
+    size_new=`scripts/get_boot_img_size`
+    if [ "$size_new" != "" ]
+    then
+      if [ "$bootimgpath" == "bootimg_*" ]
+      then size_old=$size_orig
+      else size_old=$size_boot
+      fi
+      echo
+      echo " Размер boot.img"
+      echo " Старый: $size_old"
+      echo "  Новый: $size_new"
+    fi
+  fi
+  cd WORKING_*
+  if [ -d boot ] && [ -e boot/initrd.gz ] && [ -e boot/zImage ]
+  then
+    echo
+    echo " Удаление папки NAND boot ..."
+    rm -rf boot
+  fi
+
+  cd ..
+    
+  echo
+  echo " Удалить папку $bootimgpath ?(y/n, deafult - y)"
+  read rmfldr
+  if [ "$rmfldr" == "n" ]
+  then
+  echo " Папка $bootimgpath сохранена"
+  echo " Вы можете удалить её потом"
+  else
+  rm -rf $bootimgpath
+  echo " Папка $bootimgpath удалена"
+  fi
+ 
+  exit_code=1
+
+else
+  echo
+  echo " newBoot.img не создан!"
+
+  rm $mkbootfs_file
+  rm $mkbootimg_file
+
+  cd ..
+  exit_code=0
+fi
+
+exit $exit_code

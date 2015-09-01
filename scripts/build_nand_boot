@@ -1,0 +1,98 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+echo
+if [ -d BOOT-EXTRACTED ]
+then
+  bootimgpath=BOOT-EXTRACTED
+  else
+  if [ -d bootimg_* ]
+    then
+    bootimgpath=bootimg_*
+    else
+    echo " Папка с ядром не найдена!"
+    exit 0
+  fi
+fi
+if [ -d $bootimgpath ]
+then
+  echo " Папка $bootimgpath найдена, проверка контента ..."
+
+  if [ -d $bootimgpath/boot.img-ramdisk ]
+  then
+    echo " Папка boot.img-ramdisk найдена"
+
+    if [ -e $bootimgpath/zImage ]
+    then
+      echo " Найден zImage"
+    else
+      echo " $bootimgpath/zImage не найден! "
+      exit 0
+    fi
+
+  else
+    echo " Папка $bootimgpath/boot.img-ramdisk не найдена!"
+    exit 0
+  fi
+
+else
+  echo " Папка $bootimgpath не найдена!"
+  exit 0
+fi
+
+
+if [ -d WORKING_* ]
+then
+  echo " Рабочая папка найдена"
+else
+  echo " Рабочая папка не найдена!"
+  exit 0
+fi
+
+
+echo 
+echo " Сборка initrd.gz ..."
+
+cd $bootimgpath/boot.img-ramdisk
+find . | cpio -o -H newc | gzip > ../initrd.gz
+cd ..
+rm -rf boot.img-ramdisk
+
+if [ "$bootimgpath" == "BOOT-EXTRACTED" ]
+then
+cd ..
+cd WORKING_*
+fi
+if [ -e boot.img ]
+  then
+  echo
+  echo "Replacing boot.img in working folder with NAND boot folder ..."
+  rm -f boot.img
+fi
+
+if [ -d boot ]
+then
+  echo
+  echo "Removing old NAND boot folder ..."
+  rm -rf boot
+fi
+if [ "$bootimgpath" == "BOOT-EXTRACTED" ]
+then
+mv ../$bootimgpath boot
+else
+mv ../$bootimgpath ../boot
+fi
+cd ..
+
+

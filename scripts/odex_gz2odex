@@ -1,0 +1,60 @@
+################################################################################
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%.  Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+clear
+arch=`scripts/get_arch`
+
+cd WORKING_*
+  num_odex_gz_app=`find system/app | grep -c "\.odex.gz$"`
+  num_odex_gz_priv_app=`find system/priv-app | grep -c "\.odex.gz$"`
+  echo "Найдено $num_odex_gz_app *.odex.gz фаилов в /system/app"
+  echo "Найдено $num_odex_gz_priv_app *.odex.gz фаилов в /system/priv-app"
+  if [ $num_odex_gz_app -gt 0 ]
+  then
+    echo "  a  = Распаковаьть *.odex.gz в /system/app"
+  fi
+  if [ $num_odex_gz_priv_app -gt 0 ]
+  then
+    echo "  p  = Распаковаьть *.odex.gz в /system/priv-app"
+  fi
+  if [ $num_odex_gz_app -gt 0 ] && [ $num_odex_gz_priv_app -gt 0 ]
+  then
+    echo "  b  = Распаковаьть *.odex.gz во всех папках (рекомендуется)"
+  fi
+read enterChoice
+  if [ "$enterChoice" == "a" ] 
+  then
+    dir_list=app
+  elif [ "$enterChoice" == "p" ]
+  then
+    dir_list=priv-app
+  elif [ "$enterChoice" == "b" ]
+  then
+    dir_list="priv-app app"
+  fi
+for fl in $dir_list
+do
+ cd system/$fl
+ grep_cmd=`find . | grep "\.odex.gz$"`
+ for file_no_ext in $grep_cmd
+ do
+  if [ -e $file_no_ext ]
+   then
+   echo $file_no_ext
+   gzip -d $file_no_ext
+  fi
+ done
+ cd ../..
+done
+cd ..
+scripts/press_enter
+

@@ -1,0 +1,115 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script extracts the contents of the boot.img from the Working folder
+#
+# It has one optional parameter:
+#
+# $1 = if set to 'no_clear' then it won't clear at start
+#
+
+if [ "$1" == "" ]
+then
+  clear
+fi
+
+scripts/prompt_remove_boot_extracted
+
+if [ ! -d BOOT-EXTRACTED ]
+then
+
+  if [ -d WORKING_* ]
+  then
+    echo
+    echo " Рабочая папка найдена"
+  else
+    echo
+    echo "Рабочая папка не найдена, вам нужно сначала создать её!"
+    exit 0
+  fi
+
+  cd WORKING_*
+
+  if [ -e boot.img ]
+  then
+
+    cd ..
+    scripts/check_bootimg_header
+    scripts/check_kernel_offset
+    res=$?
+
+    if [ "$res" == "0" ]
+    then
+      kernel_file=extract-kernel.pl
+      ramdisk_file=extract-ramdisk.pl
+    else
+      exit 0
+    fi
+
+    echo " Создание папки 'BOOT-EXTRACTED' ..."
+    cd WORKING_*
+    mkdir ../BOOT-EXTRACTED
+    cp boot.img ../BOOT-EXTRACTED/
+    
+    cd ..
+    cp tools/extract_boot_files/$kernel_file BOOT-EXTRACTED/extract-kernel.pl
+    cp tools/extract_boot_files/$ramdisk_file BOOT-EXTRACTED/extract-ramdisk.pl
+    cd BOOT-EXTRACTED
+
+    echo
+    echo " Извлечение kernel ..."
+    ./extract-kernel.pl boot.img 2>/dev/null
+   
+    if [ ! -e zImage ]
+    then
+      echo "Ошибка: zImage не найден!"
+    else
+      test_z=`od -A n -j 1 -N 4 zImage | sed 's/ //g'`
+      if [ "$test_z" == "" ]
+      then
+        echo "Ошибка: zImage повреждён!"
+      fi
+    fi
+
+    echo " Извлечение ramdisk ..." 
+    ./extract-ramdisk.pl boot.img 2>/dev/null
+
+    if [ ! -d boot.img-ramdisk ]
+    then
+      echo "Ошибка: ramdisk не найден!"
+    fi
+
+    rm boot.img
+    rm extract-*.pl
+    cd ..
+    echo
+
+  else
+
+    if [ -e boot/initrd.gz ] && [ -e boot/zImage ]
+    then
+      cd ..
+      scripts/ensure_nand_extracted $1
+
+    else
+      echo "Ошибка: boot.img не найден!"
+      echo
+      cd ..
+      exit 0
+    fi
+  fi      
+
+fi
+

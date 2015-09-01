@@ -1,0 +1,502 @@
+################################################################################
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+################################################################################
+
+clear
+
+if [ -d WORKING_* ]
+then
+	cd WORKING_*
+	if [ ! -e system/build.prop ]
+	then
+		echo "Ошибка: build.prop не найден, продолжение невозможно"
+		cd ..
+		exit 0
+	fi
+	cd ..
+else
+	echo "Ни одной рабочей папки не найдено!"
+	exit 0
+fi
+
+echo " Введите параметр build.prop:"
+echo " (х - для отмены, s - для показа списка параметров)"
+
+read build
+
+if [ "$build" == "x" ]
+then
+	exit 0
+fi
+
+if [ "$build" == "s" ]
+then
+echo " 1  - ro.build.date"
+echo " 2  - ro.build.date.utc"
+echo " 3  - ro.build.id"
+echo " 4  - ro.build.display.id"
+echo " 5  - ro.build.version.sdk"
+echo " 6  - ro.build.version.codename"
+echo " 7  - ro.build.version.release"
+echo " 8  - ro.build.type"
+echo " 9  - ro.build.user"
+echo "10  - ro.build.host"
+echo "11  - ro.telephony.default_network"
+echo "12  - ro.product.model"
+echo "13  - ro.product.brand"
+echo "14  - ro.config.hw_browser_ua3g"
+echo "15  - ro.config.hw_browser_ua2g"
+scripts/press_enter
+echo "16  - ro.product.name"
+echo "17  - ro.product.device"
+echo "18  - ro.product.board"
+echo "19  - ro.product.cpu.abi"
+echo "20  - ro.product.cpu.abi2"
+echo "21  - ro.product.manufacturer"
+echo "22  - ro.product.locale.language"
+echo "23  - ro.product.locale.region"
+echo "24  - ro.wifi.channels"
+echo "25  - ro.board.platform"
+echo "26  - persist.sys.powerup_reason"
+echo "27  - ro.poweroff_alarm"
+echo "28  - persist.sys.actualpoweron"
+echo "29  - rild.libpath"
+echo "30  - rild.libargs"
+echo "31  - ril.subscription.types"
+scripts/press_enter
+echo "32  - DEVICE_PROVISIONED"
+echo "33  - debug.sf.hw"
+echo "34  - dalvik.vm.heapsize"
+echo "35  - ro.opengles.version"
+echo "36  - ro.use_data_netmgrd"
+echo "37  - persist.data.ds_fmc_app.mode"
+#
+# system props for IMS module
+#
+echo "  - persist.ims.regmanager.mode"
+
+#
+# system prop for requesting Master role in incoming Bluetooth connection.
+#
+echo "  - ro.bluetooth.request.master"
+
+#
+# system prop for Bluetooth FTP profile
+#
+echo "  - ro.qualcomm.bluetooth.ftp"
+
+#
+# system prop for Bluetooth SAP profile
+#
+echo "  - ro.qualcomm.bluetooth.sap"
+
+#
+# system prop for Bluetooth Auto connect for remote initated connections
+#
+echo "  - ro.bluetooth.remote.autoconnect"
+
+#
+#system property for Bluetooth discoverability timeout in seconds
+#0: Always discoverable
+# DTS2011111803474 leiwei 20111207 begin
+echo "  - debug.bt.discoverable_time"
+# DTS2011111803474 leiwei 20111207 end
+
+#
+# System prop to enable/disable OMH. Enabled by default
+#
+# DTS2011121605975 lihaiwei 20111227 begin
+echo "  - persist.omh.enabled"
+# DTS2011121605975 lihaiwei 20111227 end
+
+#System prop to enable ehrpd capability
+echo "  - ro.config.ehrpd"
+
+# System property for cabl
+echo "  - ro.qualcomm.cabl"
+
+#
+#System prop to determine availability of
+#analog fm path
+#
+echo "  - ro.fm.analogpath.supported"
+#DTS2010060300084 xiongshiyi 00165767 20100603 begin
+#
+#System property for FM transmitter
+#
+echo "  - ro.fm.transmitter"
+
+#
+#System property for single instance recording
+#
+echo "  - ro.fm.mulinst.recording.support"
+echo "  - ro.config.keypasstouser"
+echo "  - ro.hw_plat"
+echo "  - ro.config.fm_type"
+scripts/press_enter
+echo "38  - ro.com.google.clientidbase"
+
+# ADDITIONAL_BUILD_PROPERTIES
+#
+echo "39  - ro.config.ringtone"
+echo "40  - ro.config.notification_sound"
+echo "41  - ro.config.alarm_alert"
+#delete ro.kernel.android.checkjni=1 to disable jni check 
+echo "42  - ro.setupwizard.mode"
+echo "43  - net.bt.name"
+echo "44  - dalvik.vm.stack-trace-file"
+echo "45  - ro.config.browser_useragent1"
+echo "46  - ro.config.browser_useragent2"
+echo "47  - ro.config.xtra_support"
+echo "48  - ro.config.AM_PM_STYLE"
+echo "49  - hw_internal_sd"
+echo "50  - persist.sys.main_storage"
+scripts/press_enter
+echo "51  - ro.staticwallpaper.pixelformat"
+echo "52  - ro.vendor.extension_library"
+echo "53  - ro.lcd.backlight"
+echo "54  - ro.build.version.incremental"
+echo "55  - ro.build.tags"
+echo "56  - ro.build.description"
+echo "57  - ro.build.fingerprint"
+echo "58  - ro.confg.hw_appsbootversion"
+echo "59  - ro.confg.hw_appversion"
+echo "60  - ro.confg.hw_appfsversion"
+echo "61  - net.dns1"
+echo "62  - net.dns2"
+echo "63  - net.rmnet0.dns1"
+echo "64  - net.rmnet0.dns2"
+scripts/press_enter
+echo "65  - audio.legacy.postproc"
+echo "66  - dalvik.vm.heapconcurrentstart"
+echo "67  - dalvik.vm.heapidealfree"
+echo "68  - dalvik.vm.heapstartsize"
+echo "69  - dalvik.vm.heaputilization"
+echo "70  - debug.camera.landscape"
+echo "71  - dev.pm.dyn_sample_period"
+echo "72  - dev.pm.dyn_samplingrate"
+echo "73  - httplive.enable.discontinuity"
+echo "74  - hw.cabl.level"
+echo "75  - hw.cabl.version"
+echo "76  - ro.sf.lcd_density"
+echo
+echo " Введите число (х - отмена):"
+echo " (all для показа всех значений)"
+read s1
+if [ "$s1" == "all" ]
+then
+	if [ `uname | grep CYGWIN` ]
+	then
+		echo " CYGWIN"
+		notepad WORKING_*/system/build.prop
+	elif [ `uname | grep Linux` ]
+	then
+		echo " Linux"
+		gedit WORKING_*/system/build.prop
+	echo " build.prop открывается..."
+	fi
+elif [ "$s1" == "x" ]
+then
+	scripts/press_enter
+	scripts/my
+
+#ro.build begin
+elif [ "$s1" == "1" ]
+then s2=ro.build.date
+
+elif [ "$s1" == "2" ]
+then s2=ro.build.date.utc
+
+elif [ "$s1" == "3" ]
+then s2=ro.build.id
+
+elif [ "$s1" == "4" ]
+then s2=ro.build.display.id
+
+elif [ "$s1" == "5" ]
+then s2=ro.build.version.sdk
+
+elif [ "$s1" == "6" ]
+then s2=ro.build.version.codename
+
+elif [ "$s1" == "7" ]
+then s2=ro.build.version.release
+
+elif [ "$s1" == "8" ]
+then s2=ro.build.type
+
+elif [ "$s1" == "9" ]
+then s2=ro.build.user
+
+elif [ "$s1" == "10" ]
+then s2=ro.build.host
+
+elif [ "$s1" == "54" ]
+then s2=ro.build.version.incremental
+
+elif [ "$s1" == "55" ]
+then s2=ro.build.tags
+
+elif [ "$s1" == "56" ]
+then s2=ro.build.description
+
+elif [ "$s1" == "57" ]
+then s2=ro.build.fingerprint
+#ro.build end
+
+elif [ "$s1" == "11" ]
+then s2=ro.telephony.default_network
+
+#ro.product begin
+elif [ "$s1" == "11" ]
+then s2=ro.product.model
+
+elif [ "$s1" == "11" ]
+then s2=ro.product.brand
+
+elif [ "$s1" == "16" ]
+then s2=ro.product.name
+
+elif [ "$s1" == "17" ]
+then s2=ro.product.device
+
+elif [ "$s1" == "18" ]
+then s2=ro.product.board
+
+elif [ "$s1" == "19" ]
+then s2=ro.product.cpu.abi
+
+elif [ "$s1" == "20" ]
+then s2=ro.product.cpu.abi2
+
+elif [ "$s1" == "21" ]
+then s2=ro.product.manufacturer
+
+elif [ "$s1" == "22" ]
+then s2=ro.product.locale.language
+
+elif [ "$s1" == "23" ]
+then s2=ro.product.locale.region
+#ro.product end
+
+elif [ "$s1" == "24" ]
+then s2=ro.wifi.channels
+
+elif [ "$s1" == "25" ]
+then s2=ro.board.platform
+
+elif [ "$s1" == "26" ]
+then s2=persist.sys.powerup_reason
+
+elif [ "$s1" == "27" ]
+then s2=ro.poweroff_alarm
+
+elif [ "$s1" == "28" ]
+then s2=persist.sys.actualpoweron
+
+#rild begin
+elif [ "$s1" == "29" ]
+then s2=rild.libpath
+
+elif [ "$s1" == "30" ]
+then s2=rild.libargs
+
+elif [ "$s1" == "31" ]
+then s2=ril.subscription.types
+#rild end
+
+elif [ "$s1" == "14" ]
+then s2=ro.config.hw_browser_ua3g
+
+elif [ "$s1" == "15" ]
+then s2=ro.config.hw_browser_ua2g
+
+elif [ "$s1" == "32" ]
+then s2=DEVICE_PROVISIONED
+
+elif [ "$s1" == "33" ]
+then s2=debug.sf.hw
+
+elif [ "$s1" == "34" ]
+then s2=dalvik.vm.heapsize
+
+elif [ "$s1" == "35" ]
+then s2=ro.opengles.version
+
+elif [ "$s1" == "36" ]
+then s2=ro.use_data_netmgrd
+
+elif [ "$s1" == "37" ]
+then s2=persist.data.ds_fmc_app.mode
+
+elif [ "$s1" == "38" ]
+then s2=ro.com.google.clientidbase
+
+# ADDITIONAL_BUILD_PROPERTIES
+elif [ "$s1" == "39" ]
+then s2=ro.config.ringtone
+
+elif [ "$s1" == "40" ]
+then s2=ro.config.notification_sound
+
+elif [ "$s1" == "41" ]
+then s2=ro.config.alarm_alert
+
+elif [ "$s1" == "42" ]
+then s2=ro.setupwizard.mode
+
+#net begin
+elif [ "$s1" == "43" ]
+then s2=net.bt.name
+
+elif [ "$s1" == "61" ]
+then s2=net.dns1
+
+elif [ "$s1" == "62" ]
+then s2=net.dns2
+
+elif [ "$s1" == "63" ]
+then s2=net.rmnet0.dns1
+
+elif [ "$s1" == "64" ]
+then s2=net.rmnet0.dns2
+#net end
+
+elif [ "$s1" == "65" ]
+then s2=audio.legacy.postproc
+
+#dalvik.vm begin
+elif [ "$s1" == "66" ]
+then s2=dalvik.vm.heapconcurrentstart
+
+elif [ "$s1" == "67" ]
+then s2=dalvik.vm.heapidealfree
+
+elif [ "$s1" == "68" ]
+then s2=dalvik.vm.heapstartsize
+
+elif [ "$s1" == "69" ]
+then s2=dalvik.vm.heaputilization
+
+elif [ "$s1" == "44" ]
+then s2=dalvik.vm.stack-trace-file
+#dalvik.vm end
+
+elif [ "$s1" == "45" ]
+then s2=ro.config.browser_useragent1
+
+elif [ "$s1" == "46" ]
+then s2=ro.config.browser_useragent2
+
+elif [ "$s1" == "47" ]
+then s2=ro.config.xtra_support
+
+elif [ "$s1" == "48" ]
+then s2=ro.config.AM_PM_STYLE
+
+elif [ "$s1" == "49" ]
+then s2=hw_internal_sd
+
+elif [ "$s1" == "50" ]
+then s2=persist.sys.main_storage
+
+elif [ "$s1" == "51" ]
+then s2=ro.staticwallpaper.pixelformat
+
+elif [ "$s1" == "52" ]
+then s2=ro.vendor.extension_library
+
+elif [ "$s1" == "53" ]
+then s2=ro.lcd.backlight
+
+elif [ "$s1" == "58" ]
+then s2=ro.confg.hw_appsbootversion
+
+elif [ "$s1" == "59" ]
+then s2=ro.confg.hw_appversion
+
+elif [ "$s1" == "60" ]
+then s2=ro.confg.hw_appfsversion
+
+elif [ "$s1" == "70" ]
+then s2=debug.camera.landscape
+
+elif [ "$s1" == "71" ]
+then s2=dev.pm.dyn_sample_period
+
+elif [ "$s1" == "72" ]
+then s2=dev.pm.dyn_samplingrate
+
+elif [ "$s1" == "73" ]
+then s2=httplive.enable.discontinuity
+
+elif [ "$s1" == "74" ]
+then s2=hw.cabl.level
+
+elif [ "$s1" == "75" ]
+then s2=hw.cabl.version
+
+elif [ "$s1" == "76" ]
+then s2=ro.sf.lcd_density
+
+#elif [ "$s1" == "77" ]
+#then s2=
+
+fi
+build1=`scripts/get_build_prop_val $s2`
+echo " $s2=$build1"
+scripts/press_enter
+fi
+
+if [ "$build" == "ro.build.version" ]
+then
+	echo " Возможно, вы имели ввиду"
+	echo " 1 - ro.build.version.release"
+	echo " 2 - ro.build.version.sdk"
+	echo " 3 - ro.build.version.codename"
+	echo " 4 - ro.build.version.incremental"
+	read release
+	if [ "$release" == "n" ]
+	then
+		echo " Параметра $build не существует!"
+		scripts/press_enter
+		scripts/my
+
+	elif [ "$release" == "1" ]
+  	then build2=ro.build.version.release
+
+	elif [ "$release" == "2" ]
+  	then build2=ro.build.version.sdk
+
+	elif [ "$release" == "3" ]
+  	then build2=ro.build.version.codename
+
+	elif [ "$release" == "4" ]
+  	then build2=ro.build.version.incremental
+	fi
+
+build1=`scripts/get_build_prop_val $build2`
+echo " $build2=$build1"
+scripts/press_enter
+scripts/my
+
+else
+build1=`scripts/get_build_prop_val $build`
+	clear
+	if [ "$build" == "s" ]
+		then
+		echo
+		scripts/press_enter
+		scripts/my
+	else
+	echo
+	echo " 	$build=$build1"
+	echo
+	scripts/press_enter
+	scripts/my
+	fi
+fi

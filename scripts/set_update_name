@@ -1,0 +1,53 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has one mandatory argument
+#
+# $1 = current name of update file (with extension) 
+#
+
+filename=$1
+
+echo 1>&2
+echo "ROM будет назван $filename" 1>&2
+echo -n "Изменить имя (y/n)? (default: n): " 1>&2
+
+read change_it
+echo 1>&2
+
+if [ "$change_it" == "y" ]
+then
+  echo -n "Введите новое имя: " 1>&2
+  read newname 
+
+  echo 1>&2
+
+  filename=`echo $newname | sed -e 's/ /_/g'`
+  
+  if [ "$filename" == "" ]
+  then
+    filename=$1
+  fi
+  
+  has_zip=`echo $filename | grep -ic "\.zip"`
+  if [ $has_zip == 0 ]
+  then
+    filename="$filename.zip"
+  fi
+
+fi
+
+echo $filename
+

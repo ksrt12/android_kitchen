@@ -1,0 +1,71 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+found_working=`ls | grep "^WORKING_"` 
+
+if [ "$found_working" != "" ]
+then
+
+  echo
+  echo "Перед тем, как вы продолжите:"
+  echo "Существующие рабочие папки, находящиеся главной папке могут быть"
+  echo "сохранены в папку 'original_update' для дальнейшего использования;"
+  echo "иначе они будут удалены."
+
+  echo
+  echo "Найдены следующие папки:"
+  echo $found_working
+  echo
+  echo -n "Переместить в original_update? (по умолчанию: д): "
+
+  read do_backup
+  echo
+
+  if [ "$do_backup" == "н" ]
+  then
+    echo "Перемещение ..."
+    rm -rf WORKING_* 2>/dev/null
+
+    if [ "$?" == "1" ]
+    then
+      exit 1
+    fi
+
+  else
+
+    # Grab this value again, in case the user manually deleted the
+    # folder after he/she was prompted
+    found_working=`ls | grep -m 1 WORKING_` 
+
+    if [ "$found_working" != "" ]
+    then
+
+      #
+      # Make backup 
+      #
+
+      echo "Перемещение старой рабочей папки в original_update ..."
+      mv WORKING_* original_update 2>/dev/null
+
+      if [ "$?" == "1" ]
+      then
+        exit 1
+      fi
+    fi
+  fi
+
+  echo
+
+fi
+

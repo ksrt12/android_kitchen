@@ -1,0 +1,18 @@
+# KSRT12 Group
+
+change_mnt=yes
+
+
+param1=ext4
+param2=EMMC
+
+param1_sdcard=ext4
+param2_sdcard=EMMC
+
+sys_mnt=\/dev\/block\/mmcblk0p17
+data_mnt=\/dev\/block\/mmcblk0p18
+boot_mnt=\/dev\/block\/mmcblk0p12
+cust_mnt=\/dev\/block\/mmcblk0p16
+cache_mnt=\/dev\/block\/mmcblk0p15
+recovery_mnt=\/dev\/block\/mmcblk0p13
+sdcard_mnt=???

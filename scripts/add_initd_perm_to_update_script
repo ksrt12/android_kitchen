@@ -1,0 +1,66 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+
+cd WORKING_*
+
+if [ -d system/etc/init.d ]
+then
+
+  echo
+  echo " Проверка, требуется ли обновить update-script для /system/etc/init.d ..."
+
+  cd META-INF/com/google/android
+
+  if [ -e update-script ]
+  then
+
+    if [ `grep -c "set_perm_recursive .*SYSTEM:etc/init.d$" update-script` == 0 ]
+    then
+
+      echo " Начало модификации update-script..."
+
+      # Look for line with set_perm_recursive of SYSTEM:
+      grep_perm=`grep set_perm_recursive update-script | grep -m 1 "SYSTEM:[ ]*$"`
+      
+      if [ "$grep_perm" == "" ]
+      then
+        sed -i -e 's/copy_dir PACKAGE:system SYSTEM:/copy_dir PACKAGE:system SYSTEM:\nset_perm_recursive 0 0 0777 0777 SYSTEM:etc\/init.d/g' update-script
+      else
+        sed -i -e 's/\(set_perm_recursive[ ]*[^\ ]*[ ]*[^\ ]*[ ]*[^\ ]*[ ]*[^\ ]*[ ]*SYSTEM:[ ]*$\)/\1\nset_perm_recursive 0 0 0777 0777 SYSTEM:etc\/init.d/g' update-script
+      fi 
+
+      if [ `grep -c "set_perm_recursive .*SYSTEM:etc/init.d$" update-script` == 0 ]
+      then
+        echo " Ошибка: не удалось найти line, чтобы обновить update-script"
+      fi
+
+    else
+	  echo
+	  echo "======================================================="
+	  echo
+      echo " update-script уже содержит разрешения для папки init.d"
+    fi
+
+  else
+    echo " Ошибка: update-script не найден!"
+  fi
+
+  cd ../../../..
+
+fi
+
+cd ..
+scripts/fix_update_script_blanks
+

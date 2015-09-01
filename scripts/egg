@@ -1,0 +1,64 @@
+clear
+echo
+echo
+echo "         ==============="
+echo "                      //"
+echo "                    //"
+echo "                  //"
+echo "                //"
+echo "              //"
+echo "              ====="
+echo "                    ==+"
+echo "                        +"  
+echo "                         +"
+echo "                         |"
+echo "                         +"
+echo "      =                 +"
+echo "       =              +"
+echo "        ============+"
+echo
+echo
+read enterKey 
+clear
+echo
+echo
+echo "            ======"
+echo "         ===      ==="
+echo "        ++           =="
+echo "                      ++"
+echo "                      ++"
+echo "                     //"
+echo "                   //"
+echo "                 //"
+echo "               //"
+echo "             //"
+echo "           //"
+echo "         //"
+echo "        //"
+echo "        ++==============="
+echo
+echo
+read enterKey
+clear
+echo
+echo "              __"
+echo "             //||"
+echo "            // ||"
+echo "           //  ||"
+echo "          //   ||"
+echo "         //    ||"
+echo "        //     ||"
+echo "        +      ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo "               ||"
+echo
+echo
+read enterKey
+exit

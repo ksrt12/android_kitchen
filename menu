@@ -1,0 +1,155 @@
+#!/bin/bash
+
+############################################################################
+#
+# Copyright (c) 2013 - dsixda (dislam@rocketmail.com)
+# Copyright (c) 2015 KSRT12 Group (vk.com/ksrt12)
+#
+# Android Kitchen is 100% free.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+############################################################################
+
+version=0.224
+
+R="echo -e \033[1;31m"
+GRY="echo -e \033[1;30m"
+GRN="echo -e \033[1;32m"
+Y="echo -e \033[1;33m"
+B="echo -e \033[1;34m"
+M="echo -e \033[1;35m"
+C="echo -e \033[1;36m"
+T="echo -e \033[1;37m"
+U="echo -e \033[1;38m"
+N="echo -e \033[0;39m"
+
+if [ ! -e menu ]
+then
+  $B
+  echo "Убедитесь, что вы запустите этот файл из той же папке, где была"
+  echo "произведена установка, в противном случае кухня будет иметь"
+  echo "проблемы с запуском скриптов. После того как вы укажите нужную"
+  echo "папку, запустите кухню с командой './menu',"
+  echo "а не с какой-либо другой командой или методом!"
+  $N
+  exit 0
+fi
+
+dir_list=( original_update scripts tools )
+error_found=0
+
+for check_dir in ${dir_list[@]}
+do
+  if [ ! -e $check_dir ]
+  then
+    $R"Ошибка: Папка '$check_dir' не найдена"
+    $Y
+    echo "Создать папку '$check_dir'?(y/n):"
+    read dircom
+    if [ "$dircom" != "n" ]
+      then mkdir $check_dir
+      else error_found=1
+    fi
+  fi
+done
+
+if [ $error_found == 1 ]
+then
+  echo
+  echo "Убедитесь, что вы установили папки для кухни правильно."
+  exit 0
+$N
+fi
+
+
+chmod 755 scripts/*
+scripts/check_install_dir
+
+if [ "$?" == "1" ]
+then
+  exit 0
+fi
+scripts/color
+scripts/init_kitchen
+scripts/check_binaries
+
+rm -f *.*~
+
+if [ "$?" == "1" ]
+then
+  exit 0
+fi
+
+
+while :
+do
+
+  clear
+
+  $M"============================================================"
+  $Y" Android Kitchen $version - by dsixda (xda-developers.com)"
+  $GRN" Перевод от ksrt12"
+  $M"============================================================"
+  echo 
+  $C"> Главное меню"
+  $N
+  echo "  1 - Создать Рабочую папку из прошивки (ROM)"
+if [ -d WORKING_* ]
+then
+  echo "  2 - Добавить Root Права (Суперпользователь)"
+  echo "  3 - Добавить BusyBox"
+  echo "  4 - Отключить экран загрузки звуков"
+  echo "  5 - Zipalign все .apk файлы, короче сжать."
+  echo "  6 - Сменить вайп статус прошивки"
+  echo "  7 - Сменить название прошивки"
+  echo "  8 - Просмотреть информацию о рабочей папке"
+  echo "  9 - Просмотреть информацию о ядре"
+  echo 
+  echo "  0 - Дополнительные параметры"
+  echo " 00 - Дополнительные опции (старые и редко используемые)"
+  $T" 99 - Собрать ROM из рабочей папки"
+else
+  echo "  p - Инструменты для портирования (эксперементально)"
+fi
+  echo
+  $B"  u - Иинормация о Kitchen"
+  echo "  x - Выход"
+  $Y
+  echo -n "Введите номер команды: "
+  read opt
+
+if [ "$opt" != "x" ] && [ "$opt" != "u" ] && [ "$opt" != "ч" ] && [ "$opt" != "exit" ] && [ "$opt" != "1" ] && [ "$opt" != "p" ]
+  then
+    scripts/check_multiple_working
+fi
+$N
+if [ "$?" != "1" ]
+  then
+    case $opt in
+      1) clear; scripts/check_rom; continue;;
+      2) scripts/do_root; continue;;
+      3) scripts/add_busybox show_help;;
+      4) scripts/disable_sounds;;
+      5) scripts/do_zipalign;;
+      6) scripts/change_wipe;;
+      7) scripts/change_rom_name;;
+      8) scripts/show_rom_info;;
+      9) scripts/show_boot_img_info;;
+      0) scripts/menu_advanced $version; continue;;
+      00) scripts/menu_legacy $version; continue;;
+      99) scripts/build_rom;;
+      p) scripts/porting_tools; continue;;
+      u) scripts/about $version; continue;;
+      x) scripts/init_kitchen; clear; echo; echo " Пока!"; echo; exit 1;;
+      ч) scripts/init_kitchen; clear; echo; echo " Пока!"; echo; exit 1;;
+      exit) scripts/init_kitchen; clear; echo; echo " Пока!"; echo; exit 1;;
+      e) scripts/egg;;
+      *) $R"Invalid option"; continue;;
+    esac
+  fi
+
+  scripts/press_enter
+
+done
+

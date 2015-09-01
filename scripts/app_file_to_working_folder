@@ -1,0 +1,87 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has two arguments:
+#
+# $1 = file name in original_update (mandatory)
+# $2 = "kernel_only" or "name_given" - if this is specified then $1 is mandatory
+#
+
+
+update_file=$1
+ 
+echo "Выбран $update_file"
+
+# Trim spaces in file name
+update_file2=`echo $update_file | tr ' ' '_'`
+
+if [ "$update_file" != "$update_file2" ]
+then
+  echo "Renaming to $update_file2"
+  mv "original_update/$update_file" original_update/$update_file2
+  update_file=$update_file2
+fi
+
+#
+# Working folder name
+#
+build_dir=`scripts/set_working_folder_name $2`
+
+#
+# Creating folder structure
+#
+echo
+echo "Создание рабочей папки $build_dir ..."
+mkdir $build_dir
+
+echo "Копирование $update_file в $build_dir ..."
+cp original_update/$update_file $build_dir
+cd $build_dir
+
+if [ "$update_file" != "UPDATA.APP" ]
+then
+  echo "Renaming to UPDATA.APP ..."
+  mv -f $update_file UPDATA.APP
+fi  
+
+echo
+echo "Извлечение system.img и boot.img, используя ZeBadger's script ..."
+temp=`perl ../tools/huawei_files/split_updata.pl 2>/dev/null`
+
+if [ ! -e output/system.img ] 
+then
+  echo "Ошибка: system.img не найден"
+fi
+
+if [ ! -e output/boot.img ]
+then
+  echo "Ошибка: boot.img не найден"
+fi
+
+if [ ! -e output/system.img ] || [ ! -e output/boot.img ]
+then
+  cd ..
+  exit 1
+fi
+
+mv -f output/boot.img .
+mv -f output/system.img .
+rm -rf output
+rm -f UPDATA.APP
+
+cd ..
+scripts/img_files_to_working_folder no_create $2
+exit $?
+

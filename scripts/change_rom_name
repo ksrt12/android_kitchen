@@ -1,0 +1,148 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%.  Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+clear
+
+if [ -d WORKING_* ]
+then
+  echo "Найдена рабочая папка"
+else
+  echo "Ни одной рабочей папки не найдено!"
+  exit 0
+fi
+
+clear
+cd WORKING_*
+
+if [ ! -e system/build.prop ]
+then
+  echo "Ошибка: не удается найти build.prop"
+  cd ..
+  exit 0
+fi
+
+cd system
+
+echo
+
+if [ `grep -c ro.product.version build.prop` == 0 ]
+then
+  id_var=ro.build.display.id
+else
+  id_var=ro.product.version
+fi
+
+#if [ `grep -c ro.build.id build.prop` != 0 ]
+#then
+#  id_var2=ro.build.id
+#fi
+
+rm -f build.prop~
+cd ../..
+
+#scripts/set_build_prop_val ro.build.date "`date`"
+#scripts/set_build_prop_val ro.build.date.utc "`date +%s`"
+
+inc=`scripts/get_build_prop_val ro.build.version.incremental`
+name=`scripts/get_build_prop_val ro.product.name`
+brand=`scripts/get_build_prop_val ro.product.brand`
+board=`scripts/get_build_prop_val ro.product.board`
+build_id=`scripts/get_build_prop_val ro.build.id`
+build_type=`scripts/get_build_prop_val ro.build.type`
+build_tag=`scripts/get_build_prop_val ro.build.tags`
+device=`scripts/get_build_prop_val ro.product.device`
+release=`scripts/get_build_prop_val ro.build.version.release`
+product=`scripts/get_build_prop_val ro.build.product`
+user=`scripts/get_build_prop_val ro.build.user`
+host=`scripts/get_build_prop_val ro.build.host`
+build_fingerprint=`scripts/get_build_prop_val ro.build.fingerprint`
+build_description=`scripts/get_build_prop_val ro.build.description`
+sdk=`scripts/get_build_prop_val ro.build.version.sdk`
+
+if [ "$user" != "$USER" ]
+then
+scripts/set_build_prop_val ro.build.user "$USER"
+fi
+
+if [ "$host" != "`hostname`" ]
+then
+scripts/set_build_prop_val ro.build.host "`hostname`"
+fi
+
+if [ "$brand" == "Device" ] || [ "$brand" == "" ]
+then
+echo "ro.product.brand=$brand"
+echo "Укажите правильное название производителя"
+read newbrand
+if [ "$newbrand" != "Device" ] && [ "$newbrand" != "" ]
+then
+scripts/set_build_prop_val ro.product.manufacturer "$newbrand"
+scripts/set_build_prop_val ro.product.brand "$newbrand"
+brand=$newbrand
+fi
+fi
+
+#echo $build_fingerprint
+#if [ "$build_fingerprint" != "$brand/$name/$device:$release/$build_id/$inc:$build_type/$build_tag" ]
+#then
+echo "$brand/$name/$device:$release/$build_id/$inc:$build_type/$build_tag"
+fingerprint="$brand\\/$name\\/$device:$release\\/$build_id\\/$inc:$build_type\\/$build_tag"
+echo $fingerprint
+#scripts/set_build_prop_val ro.build.fingerprint "$fingerprint"
+#fi
+
+echo $build_description
+#if [ "$build_description" != "$product-$build_type $build_id $inc $build_tag" ]
+#then
+#echo "$product-$build_type $build_id $inc $build_tag"
+new_description="$product-$build_type $build_id $inc $build_tag"
+#echo $new_description
+#scripts/set_build_prop_val ro.build.description "$new_description"
+#fi
+
+if [ "$sdk" == "14" ] || [ "$sdk" == "15" ]
+then
+coden=ICS
+fi
+if [ "$sdk" == "16" ] || [ "$sdk" == "17" ] || [ "$sdk" == "18" ]
+then
+coden=JellyBean
+fi
+if [ "$sdk" == "19" ] || [ "$sdk" == "20" ]
+then
+coden=KitKat
+fi
+if [ "$sdk" == "21" ] || [ "$sdk" == "22" ]
+then
+coden=Lollipop
+fi
+
+current_name=`scripts/get_build_prop_val $id_var`
+
+#if [ "$current_name" == "UNKNOWN" ]
+#then
+
+#  echo "Ошибка: не удается найти $id_var в build.prop"
+#  cd ../..
+#  exit 0
+#fi
+
+echo
+echo "Текущее название ROM'a:"
+echo
+echo "$current_name"
+echo
+echo
+echo -n "Хотите переименовать его (y/n)? (default: y): "
+

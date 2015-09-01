@@ -1,0 +1,610 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+N="echo -e \033[0;39m"
+B="echo -e \033[1;34m"
+C="echo -e \033[1;36m"
+G="echo -e \033[1;32m"
+M="echo -e \033[1;35m"
+R="echo -e \033[1;31m"
+Y="echo -e \033[1;33m"
+Nn="echo -e -n \033[0;39m"
+Bb="echo -e -n \033[1;34m"
+Cc="echo -e -n \033[1;36m"
+Gg="echo -e -n \033[1;32m"
+Mm="echo -e -n \033[1;35m"
+Rr="echo -e -n \033[1;31m"
+Yy="echo -e -n \033[1;33m"
+
+clear
+
+if [ -d WORKING_* ]
+then
+
+  cd WORKING_*
+  working_folder=`pwd`
+  if [ ! -e META-INF/com/google/android/update-script ]
+  then
+    echo "Ошибка:  update-script не найден, продолжение невозможно"
+    cd ..
+    exit 0
+  fi
+
+  if [ ! -e system/build.prop ]
+  then
+    echo "Ошибка: build.prop не найден, продолжение невозможно"
+    cd ..
+    exit 0
+  fi
+
+  cd ..
+
+else
+  echo "Ни одной рабочей папки не найдено!"
+  exit 0
+fi
+
+echo
+echo -n "Пожалуйста, подождите "
+
+#
+# Получить версию кухни
+#
+
+$Mm">"
+kitchen_ver=`scripts/get_kitchen_ver`
+
+
+#
+# Check if Samsung Galaxy S/S2
+#
+
+$Bb">"
+scripts/check_galaxy_s_and_s2
+is_galaxy_ss2=$?
+
+$Cc">"
+if [ "$is_galaxy_ss2" == "1" ]
+then
+  scripts/extract_initramfs
+else
+  scripts/ensure_boot_extracted
+fi
+
+
+if [ ! -d BOOT-EXTRACTED ] 
+then
+  echo "Предупреждение: папка BOOT-EXTRACTED не найдена"
+fi
+
+
+clear
+echo
+echo -n "Пожалуйста, подождите "
+
+$Gg">"
+scripts/check_galaxies
+is_galaxies=$?
+$Yy">"
+scripts/check_galaxy_s3_exynos
+is_galaxy_s3_exynos=$?
+$Rr">"
+scripts/check_gnote2_common
+is_gnote2_common=$?
+scripts/check_galaxy_s4_common
+is_galaxy_s4_common=$?
+
+$Nn">"
+echo
+
+#
+# " -Проверка версии ОС"
+#
+
+$M" --> Проверка версии ОС"
+android_os=`scripts/get_build_prop_val ro.build.version.release`
+
+
+
+#
+#  -Проверка номера сборки
+#
+
+$B" --> Проверка номера сборки"
+cd WORKING_*
+cd system
+
+if [ `grep -c ro.product.version build.prop` == 0 ]
+then
+  id_var=ro.build.display.id
+else
+  id_var=ro.product.version
+fi
+
+cd ../..
+
+rom_name=`scripts/get_build_prop_val $id_var`
+
+
+
+#
+# " -Проверка устройства"
+#
+
+$C" --> Проверка устройства"
+device_name=`scripts/get_device_name`
+
+
+#
+# " -Проверка API"
+#
+
+$G" --> Проверка уровня API"
+api_lvl=`scripts/get_build_prop_val ro.build.version.sdk`
+
+
+#
+# " -Проверка модели"
+#
+
+$Y" --> Проверка модели"
+model=`scripts/get_product_model`
+
+#
+# "CM"
+#
+cm_version=`scripts/get_build_prop_val ro.cm.version`
+
+
+#
+# "Slim"
+#
+slim_version=`scripts/get_build_prop_val ro.slim.version`
+
+
+
+
+#
+# " -Проверка на наличие root"
+#
+
+$R" --> Проверка на наличие root"
+cd WORKING_*
+
+if [ -e system/bin/su ] || [ -e system/xbin/su ]
+then
+  su_status=ДА
+else
+  su_status=НЕТ
+fi
+
+if [ -e system/*/Superuser.apk ] || [ -e system/*/SuperUser.apk ]
+then
+  su_app_status=ДА
+else
+  su_app_status=НЕТ
+fi
+
+cd ..
+
+if [ ! -e BOOT-EXTRACTED/boot.img-ramdisk/default.prop ]
+then
+  unsecure_status=UNKNOWN
+else
+  grep_root=`grep -m 1 ro.secure BOOT-EXTRACTED/boot.img-ramdisk/default.prop`
+
+  if [ "$grep_root" == "ro.secure=1" ] 
+  then
+    unsecure_status=НЕТ
+  elif [ "$grep_root" == "ro.secure=0" ]
+  then
+    unsecure_status=ДА
+  else
+    unsecure_status=UNKNOWN
+  fi
+fi
+
+
+
+#
+# " -Проверка на наличие busybox"
+#
+
+$M" --> Проверка на наличие busybox"
+cd WORKING_*
+
+if [ "`find . -name busybox`" == "" ] 
+then
+  bb_status=НЕТ
+else
+  bb_status=ДА
+fi
+
+cd ..
+
+
+
+#
+# " --> Проверка на наличие apps2sd"
+#
+
+$B" --> Проверка на наличие apps2sd"
+scripts/a2sd_exists
+
+if [ "$?" == "1" ]
+then
+  apps2sd_status=ДА
+else
+  apps2sd_status=НЕТ
+fi
+
+
+
+#
+#  -Проверка беспроводного модема
+#
+
+$C" --> Проверка функции беспроводного модема"
+scripts/pre_froyo_check
+is_old=$?
+
+if [ "$is_old" == "1" ] 
+then
+
+  cd WORKING_*
+
+  tether_list=( wireless_tether* android.tether* )
+
+  if [ "$su_status" == "ДА" ] 
+  then
+    tether_status=НЕТ*
+  else
+    tether_status=НЕТ
+  fi
+
+  for find_tether in ${tether_list[@]}
+  do
+    
+    res=`find . -name $find_tether`
+    if [ "$res" != "" ]
+    then
+      tether_status=ДА
+      break
+    fi
+
+  done
+  cd ..
+fi
+
+
+#
+# " -Проверка поддержки /data/app"
+#
+
+$G" --> Проверка поддержки /data/app"
+scripts/data_app_exists
+
+if [ "$?" == "1" ]
+then
+  data_app_status=ДА
+else
+  data_app_status=НЕТ
+fi
+
+
+#
+# " -Проверка поддержки /data/local"
+#
+
+$Y" --> Проверка поддержки /data/local"
+cd WORKING_*
+cd META-INF/com/google/android
+grep_data_local=`grep -c "0771 DATA:local" update-script`
+
+if [ "$grep_data_local" == "1" ]
+then
+  custom_anim_status=ДА
+else
+  custom_anim_status=НЕТ
+fi
+
+cd ../../../../..
+
+
+#
+# " -Проверка на наличие Nano"
+#
+
+$R" --> Проверка на наличие Nano"
+scripts/nano_exists
+res=$?
+if [ "$res" = "0" ] 
+then
+  nano_status=НЕТ
+else
+  nano_status=ДА
+fi
+
+
+
+
+#
+# " -Проверка на наличие Bash"
+#
+
+$M" --> Проверка на наличие Bash"
+cd WORKING_*
+
+if [ "`find . -name bash`" == "" ]
+then
+  bash_status=НЕТ
+else
+  bash_status=ДА
+fi
+
+cd ..
+
+
+
+
+#
+# " -Проверка версии CSC"
+#
+
+$B" --> Проверка версии CSC"
+cd WORKING_*
+
+show_csc=no
+
+if [ -e system/CSCVersion.txt ] || [ "$device_name" == "GT-I9001" ] || [ "$is_galaxies" == "1" ]
+then
+
+  show_csc=yes
+
+  if [ -e system/CSCVersion.txt ]
+  then
+    csc_version=`more system/CSCVersion.txt | sed 's/[ ]*$//g'`
+  else
+    csc_version=UNKNOWN
+  fi
+
+fi
+
+cd ..
+
+
+
+
+if [ "$is_galaxy_ss2" == "1" ] || [ "$is_galaxy_s3_exynos" == "1" ] || \
+     [ "$is_gnote2_common" == "1" ] || [ "$is_galaxy_s4_common" == "1" ]
+then
+
+  #
+  # " -Проверка на наличие modem.bin"
+  #
+
+  $C" --> Проверка на наличие modem.bin"
+  cd WORKING_*
+
+  if [ -e modem.bin ]
+  then
+    modem_status=ДА
+  else
+    modem_status=НЕТ
+  fi
+
+  cd ..
+
+else
+
+  #
+  # " -Проверка на наличие radio.img"
+  #
+
+  $G" --> Проверка на наличие radio.img"
+  cd WORKING_*
+
+  if [ -e radio.img ]
+  then
+    radio_status=ДА
+  else
+    radio_status=НЕТ
+  fi
+
+  cd ..
+
+fi
+
+
+
+
+#
+# " -Проверка на деодексацию ROMа"
+#
+
+$C" --> Проверка на деодексацию ROM'а"
+cd WORKING_*
+
+if [ ! -d system/framework ]
+then
+  deodex_fr_status="NO FOLDER"
+else
+  if [ "`find system/framework -name *.odex`" == "" ]
+  then
+    deodex_fr_status=ДА
+  else
+    deodex_fr_status=НЕТ
+  fi
+fi
+
+if [ ! -d system/app ]
+then
+  deodex_app_status="NO FOLDER"
+else
+  if [ "`find system/app -name *.odex`" == "" ] && [ "`find system/app -name *.odex.gz`" == "" ]
+  then
+    deodex_app_status=ДА
+  else
+    if [ "`find system/app -name *.odex.gz`" != "" ]
+    then
+      deodex_app_status="найдены .odex.gz файлы"
+    else
+      deodex_app_status=НЕТ
+    fi
+  fi
+fi
+
+if [ ! -d system/priv-app ]
+then
+  deodex_priv_app_status="NO FOLDER"
+else
+  if [ "`find system/priv-app -name *.odex`" == "" ] && [ "`find system/priv-app -name *.odex.gz`" == "" ]
+  then
+    deodex_priv_app_status=ДА
+  else
+    if [ "`find system/app -name *.odex.gz`" != "" ]
+    then
+      deodex_priv_app_status="найдены .odex.gz файлы"
+    else
+      deodex_priv_app_status=НЕТ
+    fi
+  fi
+fi
+
+cd ..
+
+
+
+
+#
+# " -Проверка на наличие wipe-ов"
+#
+
+$G" --> Проверка на наличие wipe-ов"
+cd WORKING_*
+
+cd META-INF/com/google/android
+grep_wipe=`grep -c "format .*DATA:" update-script`
+  
+if [ "$grep_wipe" == "0" ]
+then
+  wipe_status=НЕТ  
+else
+  wipe_status=ДА
+fi
+
+cd ../../../../..
+
+
+#
+# " -Проверка BusyBox в run-parts method"
+#
+
+$Y" --> Проверка BusyBox в run-parts method"
+
+if [ -e BOOT-EXTRACTED/boot.img-ramdisk ]
+then
+  cd BOOT-EXTRACTED/boot.img-ramdisk
+
+  test_start=`grep -c "start sysinit" init.rc`
+  test_service=`grep -c "service sysinit" init.rc`
+
+  if [[ "$test_start" == "0" || "$test_service" == "0" ]] 
+  then
+    runparts_status=НЕТ
+  else
+    runparts_status=ДА
+  fi
+
+  cd ../..
+else
+  runparts_status=UNKNOWN
+fi
+
+
+clear
+
+$B
+echo "Информация о рабочой папке $working_folder"
+$N
+echo " Версия ОС                       : $android_os"
+echo " Уровень API                     : $api_lvl"
+echo " Устройство                      : $device_name"
+echo " Модель                          : $model"
+echo " Название ROMа                   : $rom_name"
+
+if [ "$show_csc" == "yes" ]
+then
+echo " Версия CSC                      : $csc_version"
+fi
+if [ "$cm_version" != "UNKNOWN" ]
+then
+echo " Версия CM                       : $cm_version"
+fi
+if [ "$slim_version" != "UNKNOWN" ]
+then
+echo " Версия Slim                     : $slim_version"
+fi
+echo " Rooted (Superuser su)           : $su_status"
+if [ "$cm_version" != "UNKNOWN" ] && [ "$slim_version" != "UNKNOWN" ]
+then
+echo " Приложение Superuser вcтроено в настройки системы"
+else
+echo " Rooted (Superuser app)          : $su_app_status"
+fi
+echo " Rooted (unsecured boot.img)     : $unsecure_status"                                         
+echo " BusyBox установлен              : $bb_status"
+echo " BusyBox включён в run-parts     : $runparts_status"
+echo " Apps2SD (Apps to EXT) включено  : $apps2sd_status" 
+
+if [ "$is_old" == "1" ]; then
+echo " Wireless tethering installed    : $tether_status"
+fi
+
+echo " /data/app включено              : $data_app_status"
+echo " Пользовательская bootanimation  : $custom_anim_status"                                                         
+echo " Текстовый редактор Nano         : $nano_status"
+echo " Bash (командная строка)         : $bash_status"
+echo " /system/framework деодексирован : $deodex_fr_status"
+echo " /system/app деодексирован       : $deodex_app_status"
+echo " /system/priv-app деодексирован  : $deodex_priv_app_status"
+
+if [ "$is_galaxy_ss2" == "1" ] || [ "$is_galaxy_s3_exynos" == "1" ] || \
+     [ "$is_gnote2_common" == "1" ] || [ "$is_galaxy_s4_common" == "1" ]
+then
+  echo " modem.bin найден              : $modem_status"
+elif [ "$is_galaxies" != "1" ]
+then
+  echo " radio.img найден                : $radio_status"
+fi
+
+echo " ROM использует wipe-ы           : $wipe_status"
+
+if [ "$is_old" == "1" ]
+then
+  if [ "$tether_status" == "NO*" ]
+  then
+    echo -n " * - No "
+    
+    for find_tether in ${tether_list[@]}
+    do
+      echo -n "$find_tether " 
+    done
+
+    echo
+  fi 
+fi
+
+rm -rf BOOT-EXTRACTED
+

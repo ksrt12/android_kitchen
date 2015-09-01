@@ -1,0 +1,76 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+## 
+## The unpack-initramfs script does not work with all zImages!!
+##
+
+clear
+
+scripts/prompt_remove_boot_extracted
+
+if [ ! -d BOOT-EXTRACTED ]
+then
+
+  if [ -d WORKING_* ]
+  then
+    echo
+    echo "Рабочая папка найдена"
+  else
+    echo
+    echo "Рабочая папка не найдена, вам нужно сначала создать её!"
+    exit 0
+  fi
+
+  initramfs_dir=BOOT-EXTRACTED
+  mkdir $initramfs_dir
+
+  cd WORKING_*
+
+  if [ -e zImage ]
+  then
+
+    cp zImage ../BOOT-EXTRACTED
+    cd ..
+    cp tools/samsung_files/unpack-initramfs BOOT-EXTRACTED/ 
+
+    cd BOOT-EXTRACTED
+    ./unpack-initramfs zImage
+        
+    if [ ! -e kernel ]
+    then
+      echo "Ошибка: kernel не найден!"
+    fi
+
+    if [ ! -d initramfs_root ]
+    then
+      echo "Ошибка: папка initramfs_root не найдена!"
+    else
+      mv -f initramfs_root boot.img-ramdisk
+    fi
+
+    rm -f unpack-initramfs zImage
+    cd ..
+    echo
+
+  else
+    echo "Ошибка: zImage не найден!"
+    echo
+    cd ..
+    echo "Removing initramfs_dir folder"
+    rm -rf $initramfs_dir
+    exit 0
+  fi      
+fi    
+

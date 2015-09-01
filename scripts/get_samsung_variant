@@ -1,0 +1,36 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+my_model=`scripts/get_product_model`
+my_model2=`echo $my_model | sed -e 's/SAMSUNG-\(.*\)/\1/g'`
+
+cd tools/samsung_files/model_variants
+
+for device_dir in `ls`
+do
+  for variant_name in `ls $device_dir`
+  do 
+    if [ -e "$device_dir/$variant_name/$my_model" ] || \
+      [ -e "$device_dir/$variant_name/$my_model2" ] 
+    then
+      echo $variant_name
+      cd ../../..
+      exit 0
+    fi
+  done
+done
+
+cd ../../..
+echo ""
+

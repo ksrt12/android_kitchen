@@ -1,0 +1,123 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+N="echo -e \033[0;39m"
+B="echo -e \033[1;34m"
+C="echo -e \033[1;36m"
+G="echo -e \033[1;32m"
+M="echo -e \033[1;35m"
+R="echo -e \033[1;31m"
+Y="echo -e \033[1;33m"
+
+bin_list=( clear gcc java perl sed wget od wc cpio zip unzip )
+arg_list=( foo dumpversion version v -version V -version -version -version -help -help )
+
+show_header=1
+
+for (( i = 0 ; i < ${#bin_list[@]} ; i++ ))
+do
+  
+  if [ $show_header == 1 ]
+  then
+    clear
+    echo
+    echo
+    $M"==========================================="
+    $Y"Добро пожаловать в dsixda's Android Kitchen"
+    $G"              перевод ksrt12               "
+    $M"==========================================="
+    echo
+    echo
+    $B"Пожалуйста, подождите "
+    for (( count = 0 ; $count <= $i ; count++ ))
+    do
+      echo -n ">"
+    done
+
+    show_header=0
+
+  else
+    echo -n ">"
+  fi
+
+  found_error=0
+
+  bin=${bin_list[$i]}
+  argmt=${arg_list[$i]}
+
+  res=`$bin -$argmt 2>/dev/null`
+  result=$?
+
+  if [ "$result" == "127" ]
+  then
+    echo
+    $R
+    echo "Ошибка: Приложение '$bin' не установлено - кухня не может"
+    echo "        нормально функционировать без него.  Ensure you did"
+    echo "        not miss a step during installation!  Refer to the"
+    echo "        Android Kitchen FAQ at xda-developers.com for further"
+    echo "        assistance."
+    echo
+    $C"   ** ПОЖАЛУЙСТА, ПРОЧИТАЙТЕ FAQ ПРЕЖДЕ ЧЕМ ЗАДАВАТЬ ВОПРОСЫ!! **"
+    echo 
+
+    if [ "$bin" == "clear" ]
+    then
+      echo "        YES, THIS ERROR IS ALREADY COVERED IN THE FAQ.  DO NOT"
+      echo "        WASTE YOUR TIME MESSAGING ME. JUST READ IT, PLEASE. ;)"
+      echo 
+    fi
+
+    found_error=1
+
+  elif [ "$bin" == "sed" ] || [ "$bin" == "od" ]
+  then
+
+    grep_cmd=`$bin --version | grep -m 1 GNU`
+
+    if [ "$grep_cmd" == "" ]
+    then
+      echo
+      echo
+      echo "Error:  You do not have the correct version of '$bin' installed."
+      echo "        Refer to the FAQ for the Android Kitchen at"
+      echo "        xda-developers.com to ensure you have installed the GNU"
+      echo "        version of $bin."
+      echo
+
+      found_error=1
+
+    fi
+  fi
+
+  if [ $found_error == 1 ]
+  then
+    #echo -n "Ignore and proceed anyway (y/n)? (default: n): "
+    #read proceedCheck
+    proceedCheck=n
+
+    if [ "$proceedCheck" != "y" ] 
+    then
+      exit 1
+    else
+      show_header=1
+    fi
+  fi
+
+done
+
+
+exit 0
+
+
+

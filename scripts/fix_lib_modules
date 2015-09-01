@@ -1,0 +1,91 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+cd WORKING_*
+
+if [ -d system/lib/modules ]
+then
+  cd system/lib/modules
+
+  echo
+
+  symlinks=( `find . -type l -exec ls -l {} \; | sed 's/.* .\/\([^ ]*\).*/\1/g'` )
+  source_files=( `find . -type l -exec ls -l {} \; | sed 's/.*-> //g'` )
+
+  for (( i=0 ; i < ${#symlinks[@]} ; i++ ))
+  do
+    link=${symlinks[$i]}
+    src=${source_files[$i]}
+
+    if [ "`echo $src | grep /`" == "" ]
+    then
+
+      rm -f $link
+      echo "Symlinking /system/lib/modules/$src -> $link"
+
+      sed -i -e 's/\(set_perm_recursive 0 0 0755 0644 SYSTEM:[ ]*$\)/symlink \/system\/lib\/modules\/'$src' SYSTEM:lib\/modules\/'$link'\n\1/g' ../../../META-INF/com/google/android/update-script
+    fi
+
+  done
+
+
+  # For MT6577
+  if [ `uname | grep CYGWIN` ]
+  then
+
+    # wlan.ko fix
+    if [ ! -e wlan.ko ]
+    then
+      if [ -e wlan_mt6620.ko ]
+      then
+        wlan_src=wlan_mt6620.ko 
+      elif [ -e wlan_mt6628.ko ]
+      then
+        wlan_src=wlan_mt6628.ko
+      fi
+    fi
+
+    if [ "$wlan_src" != "" ]
+    then
+        echo "Symlinking /system/lib/modules/$wlan_src -> wlan.ko"
+
+        sed -i -e 's/\(set_perm_recursive 0 0 0755 0644 SYSTEM:[ ]*$\)/symlink \/system\/lib\/modules\/'$wlan_src' SYSTEM:lib\/modules\/wlan.ko\n\1/g' ../../../META-INF/com/google/android/update-script
+    fi
+
+    # p2p.ko fix
+    if [ ! -e p2p.ko ]
+    then
+      if [ -e p2p_mt6620.ko ]
+      then
+        p2p_src=p2p_mt6620.ko 
+      elif [ -e p2p_mt6628.ko ]
+      then
+        p2p_src=p2p_mt6628.ko
+      fi
+    fi
+
+    if [ "$p2p_src" != "" ]
+    then
+        echo "Symlinking /system/lib/modules/$p2p_src -> p2p.ko"
+
+        sed -i -e 's/\(set_perm_recursive 0 0 0755 0644 SYSTEM:[ ]*$\)/symlink \/system\/lib\/modules\/'$p2p_src' SYSTEM:lib\/modules\/p2p.ko\n\1/g' ../../../META-INF/com/google/android/update-script
+    fi
+
+  fi
+
+  cd ../../..
+  echo
+fi
+
+cd ..

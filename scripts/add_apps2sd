@@ -1,0 +1,228 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+
+scripts/check_galaxies
+
+if [ "$?" == "1" ]
+then
+  clear
+  echo
+  echo "Функция не поддерживается кухней для данного ROM"
+  exit 0
+fi
+
+if [ "$1" == "" ]
+then
+  clear
+
+elif [ "$1" == "show_help" ]
+then
+
+  clear
+  echo
+  echo "-----------------------------------------------------------------"
+  echo  
+  echo "Apps2SD это функция, которая позволит все ваши приложения устанавливать"
+  echo "на карту памяти SD для экономии места на Вашем устройстве."
+  echo
+  echo "ПРИМЕЧАНИЕ: Она предназначена для устройств с небольшим внутренним пространством"
+  echo "хранения, так что, если устройство оснащено большим объемом внутренней памяти"
+  echo "(например, на Nexus S), то Apps2SD не требуется, и может быть не совместимым"
+  echo
+  echo "Эта кухня использует Darktremor Apps2SD метод. Убедитесь в"
+  echo "наличии быстрой картой памяти (например Class 6), и что она"
+  echo "разделена в соответствующей файловой системе, предпочтительно EXT3."
+  echo "Раздел подкачки, как правило, не нужен."
+  echo
+  echo "-----------------------------------------------------------------"
+  echo
+
+fi
+
+device_name=`scripts/get_build_prop_val ro.product.device`
+change_mnt=`scripts/get_edify_def_val $device_name change_mnt`
+change_mnt_dell=`scripts/get_edify_def_val $device_name change_mnt_dell`
+
+if [ -e tools/edify_defs/$device_name ]
+then
+  if [ "$change_mnt" != "UNKNOWN" ] || [ "$change_mnt_dell" != "UNKNOWN" ]
+  then
+    echo "Предупреждение: устройство $device_name скорее всего, не будет поддерживать Apps2SD!"
+    echo
+  fi
+fi
+
+
+echo -n "Продолжить установку Apps2SD (y/n)? (по умолчанию: y): "
+read do_apps2sd
+
+if [ "$do_apps2sd" == "n" ]
+then
+  exit 0
+fi
+
+echo
+
+if [ -d WORKING_* ]
+then
+
+  cd WORKING_*
+
+  if [ ! -e META-INF/com/google/android/update-script ]
+  then
+    echo "Ошибка: update-script не найден!"
+    cd ..
+    exit 0
+  fi
+
+  su_path=`find . -name su`
+
+  if [ "$su_path" == "" ]
+  then
+    echo "'su' binary не найден в рабочей папке!"
+    echo "Вы должны root-ировать ваш ROM в первую очередь."
+    cd ..
+    exit 0
+  else
+
+    echo
+    echo "Найдено $su_path"
+
+    cd .. 
+    scripts/a2sd_exists
+
+    if [ "$?" == "1" ]
+    then
+      echo
+      echo "a2sd уже установлено!"
+      scripts/add_cachesd_to_update_script
+      exit 0
+    fi
+
+  fi
+
+else
+  echo
+  echo "Рабочая папка не найдена, вам нужно ее создать!"
+  exit 0
+fi
+
+
+scripts/ensure_boot_extracted
+
+if [ -d BOOT-EXTRACTED ]
+then
+  if [ -d WORKING_* ]
+  then
+    echo
+  else
+    exit 0
+  fi
+else
+  exit 0
+fi
+
+if [ -d BOOT-EXTRACTED/boot.img-ramdisk ]
+then
+  cd BOOT-EXTRACTED/boot.img-ramdisk
+else
+  echo "Ошибка: BOOT-EXTRACTED/boot.img-в папке не найдено!"
+  exit 0
+fi
+
+test_property=`grep -c "on property:cm.filesystem.ready=1" init.rc`
+test_start_a2sd=`grep -c "start a2sd" init.rc`
+test_sysinit=`grep -c "start sysinit" init.rc`
+test_cm_sysinit=`grep -c "exec /system/bin/sysinit" init.rc`
+
+if [[ "$test_property" != "0" && "$test_start_a2sd" != "0" ]] || \
+   [[ "$test_property" != "0" && "$test_sysinit" != "0" ]] || \
+   [[ "$test_property" != "0" && "$test_cm_sysinit" != "0" ]] 
+then
+  echo "init.rc уже содержит a2sd, чтобы начать!"
+  cd ../..
+  echo 
+  echo "Извлечение BOOT-EXTRACTED папки ..."
+  rm -rf BOOT-EXTRACTED
+
+else
+
+  echo
+  echo "Изменение init.rc в ROM, чтобы включить Apps2SD..."
+
+
+  if [ "$test_sysinit" != "0" ] 
+  then
+    sed -i -e 's/start sysinit/start sysinit\n    on property:cm.filesystem.ready=1/' init.rc 
+
+  elif [ "$test_start_a2sd" != "0" ] && [ "$test_property" == "0" ]
+  then
+    sed -i -e 's/start a2sd/start a2sd\n    on property:cm.filesystem.ready=1/' init.rc 
+
+  elif [ "$test_start_a2sd" == "0" ] && [ "$test_property" == "0" ]
+  then
+    sed -i -e 's/class_start default/start a2sd\n    on property:cm.filesystem.ready=1\n\n    class_start default/' init.rc
+ 
+  elif [ "$test_start_a2sd" == "0" ] && [ "$test_property" != "0" ]
+  then
+    sed -i -e 's/on property:cm.filesystem.ready=1/start a2sd\n    on property:cm.filesystem.ready=1/' init.rc 
+  fi
+
+  test_service_a2sd=`grep -c "service a2sd" init.rc`
+  test_service_sysinit=`grep -c "service sysinit" init.rc`
+
+  if [ "$test_service_a2sd" == "0" ] && [ "$test_service_sysinit" == "0" ]
+  then
+    sed -i -e 's/service media /service a2sd \/system\/bin\/logwrapper \/system\/bin\/sh \/system\/bin\/a2sd\n    disabled\n    oneshot\n\nservice media /' init.rc
+  fi
+
+  cd ../..
+  scripts/build_boot_img
+
+fi
+
+scripts/add_apps2sd_files
+scripts/add_apps2sd_to_update_script
+res=$?
+
+if [ "$res" == "0" ]
+then
+
+  #
+  # apps2sd могли включать Bash binary
+  #
+  find_cmd=`find tools/apps2sd_files -name bash`
+  if [ "$find_cmd" != "" ]
+  then
+    scripts/add_bash_to_update_script
+  fi
+
+  #
+  # Запрашивать BusyBox выполнения части метода
+  #
+  if [ "$test_sysinit" == "0" ] 
+  then
+    scripts/add_busybox_run_parts for_apps2sd
+  fi
+
+  #
+  # Dalvik-кэш для SD
+  #
+  scripts/add_cachesd_to_update_script
+
+  echo
+  echo "Готово"
+
+fi

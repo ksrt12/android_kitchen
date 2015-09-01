@@ -1,0 +1,56 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%.  Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has two optional parameters:
+#
+# $1 = folder where the image is located
+# $2 = image name (e.g. data.img or system.img)
+#
+# If not specified, then script assumes system.img in working folder
+#
+
+if [ `uname | grep CYGWIN` ]
+then
+  unyaffs_file=unyaffs.exe
+else
+  unyaffs_file=unyaffs
+fi
+  
+if [ -e tools/unyaffs_files/$unyaffs_file ]
+then
+  rm -f tools/unyaffs_files/$unyaffs_file
+fi
+
+scripts/check_yaffs_sizes $1 $2
+
+if [ "$?" == "1" ]
+then
+  exit 1
+fi
+
+echo "Компилирование unyaffs ..."
+cd tools/unyaffs_files
+gcc -o unyaffs unyaffs.c
+cd ../..
+
+if [ -e tools/unyaffs_files/$unyaffs_file ]
+then
+  echo unyaffs удачно скомпилирован
+else
+  echo "Error: unyaffs не скомпилирован!"
+  exit 1
+fi
+
+exit 0

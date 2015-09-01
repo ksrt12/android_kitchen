@@ -1,0 +1,177 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has two optional arguments: 
+#
+# $1 = "no_info"      - specify this when porting or extracting kernel
+# $2 = "kernel_only"  - if this is specified, then $1 is mandatory
+#
+if [ -e original_update/system.ext4.tar.a ]
+then
+mv -f ./original_update/system.ext4.tar.a ./original_update/system.ext4.tar
+fi
+echo
+echo "Создать рабочую папку для ROM"
+echo "=============================="
+echo
+echo "Убедитесь, что имеется по крайней мере один ROM в 'original_update' папке!"
+echo
+echo "Выберите один из вариантов:"
+echo
+echo " s - Показать поддерживаемые форматы"
+echo " x - Прекратить, не создают рабочую папку"
+echo ""
+echo "Или нажмите Enter, чтобы продолжить"
+echo
+read proceed
+  
+if [ "$proceed" == "s" ]
+	then
+	echo "Основные поддерживаемые форматы ROMa"
+	echo
+	echo " - system.img + опционально boot.img/lib.img (т.е. стоковый ROM/Nandroid)"
+	echo " - ZIP-файл кастомного ROMа              (т.е. update.zip)"
+	echo " - ZIP-файл содержащий *.img              (т.е. стоковый rom.zip)"
+	echo " - ZIP-файл содержащий поставляемый ROM в формате папок SYSTEM + BOOT"
+	echo " - Рабочая папка,созданная в этой кухне  (т.е. WORKING_old_rom)"
+	echo
+	echo " Другие форматы:"
+	echo
+	echo " Samsung Galaxy S:"
+	echo " - factoryfs.rfs + опционально cache.rfs/zImage"
+	echo " - PDA.tar.md5 + опционально CSC.tar.md5/PHONE.tar.md5"
+	echo " - PDA.tar + опционально CSC.tar/PHONE.tar"
+	echo " - TAR/ZIP-файл, содержащий вышеперечисленное "
+	echo
+	echo " Samsung Galaxy S Plus:"
+	echo " - system.img.ext4 + опционально cache.img.ext4/boot.img"
+	echo " - TAR/ZIP-файл, содержащий вышеперечисленное"
+	scripts/press_enter
+	echo " Samsung Galaxy SII:"
+	echo " - factoryfs.img + опционально hidden.img/cache.img/zImage  "
+	echo " - system.img.ext4 + опционально cache.img.ext4/boot.img"
+	echo " - TAR/ZIP-файл , содержащий вышеперечисленное"
+	echo " - system.ext4.tar + опционально boot.img (Nandroid backup)"
+	echo
+	echo " Samsung Galaxy SIII / Galaxy Note II / Galaxy S4"
+	echo " - system.img.ext4 + опционально tomb.img.ext4/cache.img.ext4/boot.img"
+	echo " - system.img + опционально cache.img/boot.img/modem.bin"
+	echo " - system.img.ext4 + опционально cache.img/boot.img/modem.bin"
+	echo " - TAR/ZIP-файл, содержащий вышеперечисленное"
+	echo " - system.ext4.tar + опционально boot.img (Nandroid backup)"
+	echo
+	echo " Samsung - untested devices (т.е. Galaxy Mini):"
+	echo " - system.rfs + опционально csc.rfs/boot.img"
+	echo " - TAR/ZIP-файл, содержащий вышеперечисленное"
+	echo
+	echo " Huawei:"
+	echo " - APP-файл from Huawei software update (e.g. UPDATE.APP)"
+	scripts/press_enter
+elif [ "$proceed" == "x" ] && [ "$proceed" == "ч" ]
+	then
+	echo
+	echo "Отменено"
+	exit 1
+fi
+
+scripts/make_backup_working
+
+#
+# Check if the working folder was actually backed up
+#
+result=$?
+
+if [ "$result" == "1" ]
+then
+
+  echo
+  echo "Ошибка: Старая рабочая папка находится в использовании. Обеспечте ее файлы или папки сохранёнными."
+  scripts/press_enter
+  exit 1
+
+else
+
+  scripts/choose_rom $2
+  res=$?
+
+  if [ "$res" == "1" ] && [ "$2" == "kernel_only" ]
+  then
+    scripts/press_enter
+  fi
+
+  if [ `ls | grep -m 1 WORKING_` ] && [ "$res" != "1" ] && [ "$1" == "" ]
+  then
+
+    #
+    # Check for radio.img
+    #
+
+    echo
+    cd WORKING*
+    if [ -e radio.img ]
+    then
+      echo
+      echo "ПРИМЕЧАНИЕ: radio.img был найден в рабочей папке. Если вы хотите"
+      echo "удалить его, вы можете сделать это в любое время перед сборкой ROM."
+    else
+
+      if [ -e META-INF/com/google/android/update-script ]
+      then
+        cd ..
+        scripts/update_script_should_convert_back ignore_msg
+        res=$?
+        cd WORKING_*
+      fi
+    fi
+
+    if [ -e boot.img ] 
+    then
+      boot_found=yes
+    elif [ -e boot/zImage ] && [ -e boot/initrd.gz ]
+    then
+      boot_found=yes
+    else
+      boot_found=no
+    fi
+
+    if [ "$boot_found"=="yes" ]
+    then
+
+      #
+      # Prompt to show ROM info
+      # 
+
+      if [ "$1" == "" ]
+      then
+        cd ..
+        scripts/prompt_show_rom_info
+      else
+        cd ..
+      fi
+
+    else
+      echo
+      echo "Загрузочный образ не найден!"
+      cd ..
+    fi
+  fi
+fi
+
+if [ "$1" == "" ]
+then
+  scripts/press_enter
+fi
+
+exit $res

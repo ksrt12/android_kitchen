@@ -1,0 +1,68 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has one optional argument
+#
+# $1 = "kernel_only" or "name_given"
+# $2 = folder name (mandatory)
+#
+file_name=$1
+update_folder=$2
+if [ "$file_name" != "" ]
+then
+update_file=`echo $file_name | sed -e 's/\.\zip//g'`
+working_dir=WORKING_$update_file
+else
+date_str=`date '+%m-%d-%y_%H-%M-%S'`
+working_dir=WORKING_$date_str
+fi
+
+if [ "$1" != "kernel_only" ] && [ "$1" != "name_given" ]
+then
+
+  echo 1>&2
+  echo "Новая рабочая папка будет названа $working_dir" 1>&2
+  echo -n "Изменить имя (y/n)? (default: n): " 1>&2
+
+  read change_it
+  echo 1>&2
+
+  if [ "$change_it" == "y" ]
+  then
+
+    name_is_set=no
+
+    while [ $name_is_set == no ]
+    do
+      echo -n "Введите новое имя (без перфикса WORKING_)" 1>&2
+      read newname 
+   
+      newname=`echo $newname | sed -e 's/ /_/g'`
+      working_dir="WORKING_$newname"
+
+      if [ -d original_update/$working_dir ]
+      then
+        echo "Ошибка: Same name already exists under original_update folder" 1>&2
+        echo 1>&2
+      else
+        name_is_set=yes
+      fi
+
+    done
+  fi
+fi
+
+echo $working_dir
+

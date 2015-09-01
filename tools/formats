@@ -1,0 +1,68 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%.  This script file is intended for personal
+# and/or educational use only.  It may not be duplicated for monetary
+# benefit or any other purpose without the permission of the developer.
+#
+################################################################################
+
+
+while :
+do
+
+clear
+
+echo
+echo " ----------------------------------------------------------------------"
+echo "The format for each ROM must be one of the following:"
+echo
+echo " - system.img + optional boot.img/lib.img (e.g. stock ROM or Nandroid)"
+echo " - ZIP file for a custom ROM              (e.g. update.zip)"
+echo " - ZIP file containing *.img              (e.g. stock rom.zip)"
+echo " - ZIP file containing shipped ROM in SYSTEM + BOOT folder format"
+echo " - Working folder made with this kitchen  (e.g. WORKING_old_rom)"
+echo " 
+echo " Other formats:"
+echo
+echo " Samsung Galaxy S:"
+echo " - factoryfs.rfs + optional cache.rfs/zImage"
+echo " - PDA.tar.md5 + optional CSC.tar.md5/PHONE.tar.md5"
+echo " - PDA.tar + optional CSC.tar/PHONE.tar"
+echo " - TAR/ZIP file containing the above "
+echo
+echo " Samsung Galaxy S Plus:"
+echo " - system.img.ext4 + optional cache.img.ext4/boot.img"
+echo " - TAR/ZIP file containing the above"
+echo
+echo " Samsung Galaxy SII:"
+echo " - factoryfs.img + optional hidden.img/cache.img/zImage  "
+echo " - system.img.ext4 + optional cache.img.ext4/boot.img"
+echo " - TAR/ZIP file containing the above"
+echo " - system.ext4.tar + optional boot.img (Nandroid backup)"
+echo
+echo " Samsung Galaxy SIII / Galaxy Note II / Galaxy S4"
+echo " - system.img.ext4 + optional tomb.img.ext4/cache.img.ext4/boot.img"
+echo " - system.img + optional cache.img/boot.img/modem.bin"
+echo " - system.img.ext4 + optional cache.img/boot.img/modem.bin"
+echo " - TAR/ZIP file containing the above"
+echo " - system.ext4.tar + optional boot.img (Nandroid backup)"
+echo
+echo " Samsung - untested devices (e.g. Galaxy Mini):"
+echo " - system.rfs + optional csc.rfs/boot.img"
+echo " - TAR/ZIP file containing the above"
+echo
+echo " Huawei:"
+echo " - APP file from Huawei software update (e.g. UPDATE.APP)"
+echo
+echo " ----------------------------------------------------------------------"
+if [ ! -d WORKING_* ]
+  then
+    scripts/press_enter
+    exit 0
+  fi

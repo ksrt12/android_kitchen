@@ -1,0 +1,236 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+N="echo -e \033[0;39m"
+B="echo -e \033[1;34m"
+C="echo -e \033[1;36m"
+G="echo -e \033[1;32m"
+M="echo -e \033[1;35m"
+R="echo -e \033[1;31m"
+Y="echo -e \033[1;33m"
+
+# Mandatory
+api_level=$1
+if [ "$api_level" == "22" ] || [ "$api_level" == "21" ] || [ "$api_level" == "20" ]
+then
+lollipop=y
+fi
+# Mandatory
+odex_file=$2
+# Mandatory
+bootclass_dir=$3
+# Mandatory
+arch=$4
+folder=$5
+if [ "$lollipop" == "y" ]
+then
+if [ "$folder" == "framework" ]; then
+fr_file=`echo $odex_file | sed 's/.odex//'`
+odex_file=$arch/$fr_file.odex
+else
+if [ -e $odex_file/$arch/$odex_file.odex ]; then
+imput=$odex_file
+odex_file="$odex_file/$arch/$odex_file.odex"
+fi; fi; fi
+if [ "$odex_file" == "" ]
+then
+  echo "Ошибка: No .odex file specified"
+
+elif [ -e $odex_file ]
+then
+  $Y"Распаковка $odex_file ..."
+else
+  $R"Ошибка: $odex_file не найден"
+fi
+
+if [ "$lollipop" == "y" ]
+then
+bin_list="baksmali.jar oat2dex.jar smali.jar"
+else
+bin_list="baksmali.jar smali.jar"
+fi
+
+for bin_file in $bin_list
+do
+  if [ ! -e $bin_file ]
+  then
+    $R"Ошибка: $bin_file не найден!"
+    exit 0
+  fi
+done
+
+#
+# Call baksmali
+#
+
+if [ "$lollipop" == "y" ]
+then
+ if [ $folder == framework ]; then
+  java_cmd="java -jar oat2dex.jar $arch/$fr_file.odex $bootclass_dir/$arch/odex"
+ else
+  java_cmd="java -jar oat2dex.jar $imput/$arch/$imput.odex $bootclass_dir/$arch/odex"
+ fi
+ echo $java_cmd
+ $java_cmd
+ if [ -e $imput/$arch/$imput.odex ]; then
+  rm -f -r $imput/$arch/$imput.odex
+  java_cmd1="java -jar baksmali.jar -a $api_level -d $bootclass_dir -x $imput/$arch/$imput.dex -o smali/$imput"
+ else
+ if [ -e $arch/$fr_file.odex ]; then
+  rm -f -r $arch/$fr_file.odex
+  java_cmd1="java -jar baksmali.jar -a $api_level -d $bootclass_dir -x $arch/$fr_file.dex -o smali/$fr_file"
+ fi
+ fi
+ echo $java_cmd1
+ $java_cmd1
+else
+ java_cmd="java -Xmx512m -jar baksmali.jar -a $api_level -d $bootclass_dir -x $odex_file"
+ echo $java_cmd
+ $java_cmd
+fi
+is_error=$?
+
+  
+#
+# If there were no errors, then assemble it with smali
+#
+
+if [ "$is_error" == "0" ] && [ -d out ] || [ -d smali/$imput ] || [ -d smali/$fr_file ]
+then
+
+  echo "Запаковка в classes.dex ..."
+  if [ "$lollipop" == "y" ]
+  then
+   if [ $folder != framework ]; then
+    java_cmd="java -jar smali.jar smali/$imput"
+   else
+    java_cmd="java -jar smali.jar smali/$fr_file"
+   fi
+  else
+   java_cmd="java -Xmx512m -jar smali.jar -a $api_level -o classes.dex out"
+  fi
+  echo $java_cmd
+  $java_cmd
+
+  if [ "$lollipop" == "y" ]
+  then
+   if [ $folder != framework ]; then
+    mv -f out.dex $imput/classes.dex
+    rm -f out.dex
+    rm -f -R $imput/$arch
+   else
+    mv -f out.dex classes.dex
+   fi
+  else
+  rm -rf out
+  fi
+
+
+  #
+  # Ensure classes.dex was produced
+  #
+  if [ -e classes.dex ] || [ -e $imput/classes.dex ]
+  then
+
+    #
+    # Ensure the .odex file's .apk or .jar is found
+    #
+  if [ "$lollipop" == "y" ]
+  then
+   if [ $folder != framework ]; then
+    no_ext=$imput
+   else
+    no_ext=$fr_file
+   fi
+   else
+    no_ext=`echo $odex_file | sed 's/.odex//'`
+   fi
+    main_file=$no_ext.apk
+
+    error_found=no
+
+    if [ -e $main_file ]
+    then
+      echo "Найден $main_file"
+      ext=apk
+
+    else
+      main_file=$no_ext.jar
+      
+      if [ -e $main_file ]
+      then
+        echo "Найден $main_file"
+        ext=jar
+      else
+        if [ -e $imput/$imput.apk ] && [ "$lollipop" == "y" ]
+        then
+          main_file=$imput/$imput.apk
+          echo "Найден $main_file"
+        else
+          echo "ОШИБКА: Не найден $no_ext.jar или $no_ext.apk"
+          error_found=yes
+        fi
+      fi
+    fi
+
+
+    if [ $error_found == yes ]
+    then
+
+      echo "Удаление classes.dex ..."
+      rm -f classes.dex
+
+      # Keep the odex file so that it's left unchanged
+
+    else
+if [ "$lollipop" != "y" ]
+then
+      echo "Удаление $odex_file ..."
+      rm -f $odex_file
+fi
+
+      echo "Перемещение classes.dex в $main_file ..."
+if [ "$lollipop" == "y" ]; then
+  if [ $folder != framework ]; then
+   mv $imput/classes.dex classes.dex
+fi; fi
+      zip -r -q $main_file classes.dex
+      rm -f classes.dex
+if [ "$lollipop" == "y" ]; then
+ if [ $folder != framework ]; then
+  #mv -f $imput/$imput.apk $imput.apk
+  #rm -f -R $imput
+  main_file=$imput/$imput.apk
+ else
+  rm -f $arch/$fr_file.dex
+ fi
+fi
+      if [ -e $main_file ]
+      then
+        $C"$main_file деодексирован"
+      fi
+$N
+      exit 0
+    fi
+
+  else
+    echo "WARNING: Unable to produce classes.dex!"
+    exit 1
+  fi          
+
+else
+  echo "WARNING: Cannot deodex $odex_file"
+  rm -rf out
+  exit 1
+fi
+

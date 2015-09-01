@@ -1,0 +1,47 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+cd WORKING_*
+
+if [ ! -e META-INF/com/google/android/update-script ]
+then
+  echo "Error: update-script not found!"
+  cd ..
+  exit 0
+fi
+
+if [ `grep -c "create_preload_symlinks" META-INF/com/google/android/update-script` != 0 ]
+then
+  echo "update-script already has /preload app symlinks content"
+  cd ..
+  exit 0
+
+else
+
+  cd META-INF/com/google/android
+
+  echo "Updating update-script with /preload app symlinks entries"
+
+  sed -i \
+    -e 's/\(copy_dir PACKAGE:system SYSTEM:\)[ ]*[\n]*/\1\nformat PRELOAD:\ncopy_dir PACKAGE:preload PRELOAD:\n/' \
+    -e 's/\(set_perm_recursive 0 2000 0755 0755 SYSTEM:bin\)[ ]*[\n]*/\1\nrun_program PACKAGE:create_preload_symlinks\n/' \
+  update-script
+
+
+  cd ../../../..
+
+fi
+
+cd ..
+scripts/fix_update_script_blanks

@@ -1,0 +1,81 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+clear
+
+if [ ! -e tools/deodex_files/api_level.txt ]
+then
+  echo "Ошибка: невозможно найти tools/deodex_files/api_level.txt"
+  scripts/press_enter
+  exit 0
+fi
+
+api_level=`scripts/get_api_level`
+
+echo
+echo "Текущий API level: $api_level"
+echo "Убедитесь, что вы установили правильный уровень API для вашего ROMа!"
+echo
+echo "Каждый уровень API соответствует, по меньшей мере, одной версии ОС Android, т.е."
+echo
+echo "  Lollipop ^ Android 5.1-5.1.2   = API Level 22"
+echo "___________| Android 5.0-5.0.2   = API Level 21"
+echo "   KitKat  | Android 4.4W        = API Level 20"
+echo "___________| Android 4.4-4.4.4   = API Level 19"
+echo "           | Android 4.3-4.3.1   = API Level 18"
+echo "Jelly Bean ^ Android 4.2-4.2.2   = API Level 17"
+echo "___________| Android 4.1-4.1.1   = API Level 16"
+echo "    ICS    | Android 4.0.3-4.0.4 = API Level 15"
+echo "___________| Android 4.0-4.0.2   = API Level 14"
+echo "           | Android 3.2         = API Level 13"
+echo " Honeycomb ^ Android 3.1.x       = API Level 12"
+echo "___________| Android 3.0.x       = API Level 11"
+echo "Gingerbread| Android 2.3.3+      = API Level 10"
+echo
+echo "ПРИМЕЧАНИЕ: это не полный список."
+echo
+echo "Полный набор соответствий находится по адресу:"
+echo "http://developer.android.com/guide/appendix/api-levels.html"
+echo
+
+echo -n "Пожалуйста, введите новый номер уровня или 0 для отмены"
+echo "                               (сейчас API = $api_level): "
+read set_level
+
+if [ "`echo $set_level | sed 's/[0-9]*//'`" != "" ] || [ "$set_level" == "" ]
+then
+  echo
+  echo "Внимание: неверный ввод - ничего не изменится"
+
+elif [ "$set_level" == "0" ]
+then
+  echo
+  echo "OK, ничего не будет изменено"
+
+else    
+  echo $set_level > tools/deodex_files/api_level.txt
+  current_level=`scripts/get_api_level`
+
+  echo
+  echo "В api_level.txt, уровень API теперь установлен на $current_level"
+
+  if [ "$current_level" != "$set_level" ]
+  then
+    echo
+    echo "Warning: Name is not the same as specified"
+  fi
+fi
+
+scripts/press_enter
+

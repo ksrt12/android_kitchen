@@ -1,0 +1,262 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+N="echo -e \033[0;39m"
+B="echo -e \033[1;34m"
+C="echo -e \033[1;36m"
+G="echo -e \033[1;32m"
+M="echo -e \033[1;35m"
+R="echo -e \033[1;31m"
+Y="echo -e \033[1;33m"
+#
+# This script has two parameters:
+#
+# $1 = folder(s) to deodex under /system (mandatory)
+#       e.g. framework
+#       e.g. "framework app" 
+# $2 = whether to enable logging (y or n)
+#      or *.odex.gz status (optional)
+#
+arch=`scripts/get_arch`
+
+dir_list=$1
+do_log=$2
+
+if [ "$do_log" == "gz_stat" ]
+then
+do_log=
+scripts/odex_gz2odex
+fi
+
+if [ "$dir_list" == "" ]
+then
+  echo "No folders for deodexing specified!"
+  exit 0
+fi
+
+base_dir=`pwd`
+api_level=`scripts/get_api_level`
+cd WORKING_*
+if [ "$api_level" == "22" ] || [ "$api_level" == "21" ] || [ "$api_level" == "20" ]
+then
+lollipop=y
+fi
+num_odex_fr=`find system/framework | grep -c "\.odex$"`
+num_odex_app=`find system/app | grep -c "\.odex$"`
+num_odex_priv_app=`find system/priv-app | grep -c "\.odex$"`
+
+
+#
+# Create log file
+#
+
+if [ "$do_log" == "" ]
+then
+  echo
+  echo -n "Включить логирование в файл (y/n)? (default: y): "
+  read do_log
+fi
+
+if [ "$do_log" != "n" ]
+then
+  do_log=y
+else
+  do_log=n
+fi
+
+date_str=`date '+%m%d%y_%H%M%S'`
+log_file=deodex_$date_str.log
+
+cd ..
+version=`scripts/get_smali_version`
+cd WORKING_*
+
+if [ "$do_log" == "y" ]
+then
+  echo
+  echo "Создание $log_file ..."
+
+  echo "" >> ../$log_file
+fi
+
+#
+# Go through each folder specified
+#
+
+for folder in ${dir_list[@]}
+do
+
+  if [ "$do_log" == "y" ]
+  then
+    echo "" >> ../$log_file
+    echo "Папка: $folder" >> ../$log_file
+    echo "-------------------" >> ../$log_file
+  fi
+
+  if [ $folder == framework ]
+  then
+    num_odex_folder=$num_odex_fr
+  elif [ $folder == app ]
+  then
+    num_odex_folder=$num_odex_app
+  elif [ $folder == priv-app ]
+  then
+    num_odex_folder=$num_odex_priv_app
+  else
+    echo
+    echo "Error: Folder $folder not valid!"
+
+    if [ "$do_log" == "y" ]
+    then
+      echo "Invalid folder" >> ../$log_file
+    fi
+
+    continue
+  fi
+
+  count=0
+  found_error=0
+  path=system/$folder
+  echo
+  echo
+  echo "Переход в папку $path ..."
+  echo
+
+  cd $path
+  if [ "$lollipop" == "y" ]
+  then
+   if [ "$folder" == "framework" ]
+   then
+    cd $arch
+    grep_cmd=`find . | grep "\.odex$" | sed 's/.\///g' | sort -f`
+    cd ..
+   else
+    grep_cmd1=`find . -maxdepth 1 -type d | grep "\./" | sed 's/ /temp_space/g' 2>/dev/null`
+    grep_cmd=`echo $grep_cmd1 | sed -e 's/\.\///g' | sort -f`
+   fi
+  else
+   grep_cmd=`find . | grep "\.odex$" | sed 's/.\///g' | sort -f`
+  fi
+  if [ "$grep_cmd" == "" ]
+  then
+    echo "Nothing found under $path!"
+
+    if [ "$do_log" == "y" ]
+    then
+      echo "Nothing here" >> ../../../$log_file
+    fi
+
+  else
+
+    #
+    # Finally, deodex each file
+    #
+ 
+    #
+    # Lollipop
+    if [ "$lollipop" == "y" ]
+    then
+     cp -f ../../../tools/deodex_files/oat2dex.jar oat2dex.jar
+     cp -f ../../../tools/deodex_files/baksmali-lp.jar baksmali.jar
+     cp -f ../../../tools/deodex_files/smali-lp.jar smali.jar
+     if [ ! -d ../framework/$arch/odex ] || [ ! -d ../framework/$arch/dex ]
+     then
+     java -jar oat2dex.jar boot ../framework/$arch/boot.oat
+     fi
+    else
+     cp -f ../../../tools/deodex_files/baksmali-$version.jar baksmali.jar
+     cp -f ../../../tools/deodex_files/smali-$version.jar smali.jar
+    fi
+
+    for odex_file in $grep_cmd
+    do
+
+      count=$(($count+1))
+      echo
+      $C"Деодексация $count из $num_odex_folder в $path: $odex_file"
+	$G
+
+      while [ -e $odex_file ] || [ -e $arch/$odex_file ] 
+      do
+        ../../../scripts/do_deodex_file $api_level $odex_file ../framework $arch $folder
+
+        if [ -e $odex_file ]
+        then
+         
+          if [ -e $odex_file ] && [ -e $odex_file/$arch/$odex_file.odex ]
+          then
+
+            echo "ERROR: Aborting $odex_file"
+            found_error=1
+            
+            if [ "$do_log" == "y" ]
+            then
+              echo "* ERROR: Aborting $odex_file!" >> ../../../$log_file
+            fi
+
+            break
+
+          elif [ ! -e $odex_file ] || [ ! -e $odex_file/$arch/$odex_file.odex ]
+          then
+            if [ "$do_log" == "y" ]
+            then
+              echo "$odex_file успешно деодексирован" >> ../../../$log_file
+            fi
+
+            break
+          fi
+
+        else
+          if [ "$do_log" == "y" ]
+          then
+            echo "$odex_file успешно деодексирован" >> ../../../$log_file
+          fi
+        fi
+      done
+
+    done
+
+    rm -f baksmali.jar
+    rm -f smali.jar
+    rm -f oat2dex.jar
+    rm -f -R smali
+    rm -f -R ../framework/$arch/odex
+    rm -f -R ../framework/$arch/dex
+
+    echo
+    $G"Закончено $path"
+$N
+
+    if [ "$found_error" == "1" ]
+    then
+      echo
+      echo "WARNING: Could not deodex the following (you can try to deodex these files again):"
+      echo `ls *.odex`
+      echo
+      cd ../..
+      break
+    fi
+
+  fi
+
+  cd ../..
+
+done
+
+if [ "$do_log" == "y" ]
+then
+  echo
+  echo "A summary of the deodexing has been logged in $log_file"
+fi
+
+cd $base_dir

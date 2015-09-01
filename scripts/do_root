@@ -1,0 +1,195 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+
+if [ "$1" == "" ]
+then
+  clear
+fi
+
+if [ ! -d WORKING_* ]
+then
+  echo "Ни одной рабочей папки не найдено!"
+  scripts/press_enter
+  exit 0
+fi
+
+scripts/check_galaxy_s_and_s2
+sgs=$?
+
+
+echo
+echo "ROOTING"
+echo "--------------------------------------------"
+echo 
+echo "Следующее будет сделано для root'а:"
+echo
+echo "- Добавить приложение  Superuser и su binary"
+echo "- Добавить строки с параметрами в update-script"
+
+if [ "$sgs" == "0" ]
+then
+  echo "- Обновить default.prop в ramdisk"
+fi
+echo 
+echo "--------------------------------------------"
+echo
+
+cd WORKING_*
+
+if [ ! -d system ]
+then
+  echo "Ни одной системной папки не найдено!"
+  cd ..
+  scripts/press_enter
+  exit 0
+fi
+
+cd system
+
+if [ ! -e build.prop ]
+then
+  echo "Ошибка: build.prop не найден!"
+  cd ../..
+  scripts/press_enter
+  exit 0
+fi
+
+su_path=`find . -name su`
+super_path=`find . -iname Superuser.apk`
+
+super_su_exists=0
+if [ "$super_path" == "" ]
+then
+  super_path=`find . -iname SuperSU.apk`
+  if [ "$super_path" != "" ]
+  then
+    super_su_exists=1
+  fi
+fi
+overwrite=0
+
+if [ "$su_path" != "" ] && [ "$super_path" != "" ] 
+then
+  echo "Папка /system содержит $su_path и $super_path"
+  echo -n "Переписать (y/n)? (по умолчанию: n): "
+  read do_su
+
+  if [ "$do_su" != "y" ]
+  then
+    cd ../..
+    exit 0
+  else
+    overwrite=1
+    echo
+    echo
+  fi
+
+fi
+if [ "$su_path" != "" ] || [ "$super_path" != "" ] 
+then
+  echo "Папка /system содержит $su_path и $super_path"
+  echo -n "Добавитьв ядро (y/n)? (по умолчанию: y): "
+  read do_boot
+if [ "$do_boot" != "n" ]
+then
+cd ../..
+scripts/do_root_boot_img
+exit
+fi
+fi
+
+echo "Какую версию пакета Superuser вы хотите"
+echo "установить?"
+echo
+
+echo " c - Chainfire's SuperSU"
+echo " d - ChainsDD's version " 
+echo " v - Оригинальная версия (очень старая)"
+echo
+echo " x - Отменить рутирование"
+echo
+
+echo -n ""
+read enterVersion
+echo
+
+if [ "$enterVersion" == "c" ]
+then
+  folder=chainfire
+elif [ "$enterVersion" == "d" ]
+then
+  if [ "`grep -c ro.build.version.release=1 build.prop`" != "0" ]
+  then
+    folder=cupcake-donut
+  else
+    folder=current
+  fi
+elif [ "$enterVersion" == "v" ]
+then
+  folder=old
+else
+  echo "Отменено"
+  cd ../..
+  exit 1
+fi
+
+if [ "$overwrite" == "1" ]
+then
+  echo
+  echo "Overwriting old 'su' binary and Superuser app ..."
+  rm -fv $su_path
+  rm -fv $super_path
+fi
+
+
+
+if [ -d xbin ]
+then
+  echo Найдено /system/xbin
+else
+  echo Создание /system/xbin
+  mkdir xbin
+fi
+
+if [ "$enterVersion" == "d" ]
+then
+  cp -fv ../../tools/su_files/chainsdd/Superuser.apk app
+  cp -fv ../../tools/su_files/chainsdd/$folder/su xbin
+else
+  cp -fv ../../tools/su_files/$folder/app/Superuser.apk app
+  cp -fv ../../tools/su_files/$folder/bin/su xbin
+fi
+
+if [ "$super_su_exists" == "1" ] && [ "$enterVersion" == "c" ]
+then
+  mv -fv app/Superuser.apk app/SuperSU.apk
+fi
+
+cd ../..
+
+echo
+scripts/add_su_to_update_script
+
+if [ "$sgs" == "0" ]
+then
+  scripts/do_root_boot_img
+fi
+
+echo 
+echo "Закончено рутирование"
+echo
+
+scripts/press_enter
+

@@ -1,0 +1,133 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# exit 1 = BusyBox не создан
+# exit 0 = BusyBox сейчас находится в рабочей папке
+#
+
+if [ "$1" == "" ]
+then
+  clear
+
+elif [ "$1" == "show_help" ]
+then
+
+  clear
+  echo
+  echo "-----------------------------------------------------------------"
+  echo  
+  echo "BusyBox представляет собой исполняемый файл, который сочетает в себе "
+  echo "крошечные версии многих общих утилит UNIX. Он необходим для root-enabled"
+  echo "приложений."
+  echo
+  echo "-----------------------------------------------------------------"
+  echo
+  echo -n "Добавить BusyBox (y/n)? (по умолчанию: y): "
+  read do_bb
+
+  if [ "$do_bb" == "n" ]
+  then
+    exit 1
+  fi    
+fi
+
+if [ ! -d WORKING_* ]
+then
+  echo Ни одной рабочей папки не найдено!
+  exit 1
+fi
+
+cd WORKING_*
+
+su_path=`find . -name su`
+
+if [ "$su_path" == "" ]
+then
+  echo "'su' binary не найден в рабочей папке!"
+  cd ..
+  exit 1
+else
+  echo
+  echo "Найдено $su_path"
+fi
+
+
+version=`more ../tools/busybox_files/version.txt | sed -e 's/BusyBox \(.*\)$/\1/g'`
+
+if [ -e system/bin/busybox ]
+then
+  echo
+  echo "Рабочая папка уже имеет /system/bin/busybox"
+
+  if [ "$1" == "show_help" ]
+  then
+    echo -n "Заменить BusyBox $version (y/n)? (по умолчанию: y): "
+    read replace_bin_bb
+    echo
+
+    if [ "$replace_bin_bb" == "n" ]
+    then
+      echo "Отмена"
+    else
+      echo "Замена /system/bin/busybox"
+      cp -f ../tools/busybox_files/busybox system/bin/
+    fi
+  fi
+
+  cd ..
+  exit 0
+fi
+
+echo
+
+if [ -d system/xbin ]
+then
+  echo Найдено /system/xbin
+
+  if [ -e system/xbin/busybox ] 
+  then
+
+    echo
+    echo "Рабочая папка уже имеет /system/xbin/busybox"
+
+    if [ "$1" == "show_help" ]
+    then
+      echo -n "Заменить BusyBox $version (y/n)? (по умолчанию: y): "
+      read replace_bb
+      echo
+    else
+      replace_bb=n
+    fi
+
+    if [ "$replace_bb" == "n" ]
+    then
+      cd ..
+      exit 0
+    fi
+
+    echo "Замена /system/xbin/busybox"
+  fi
+else
+  echo Создание /system/xbin
+  mkdir system/xbin
+fi
+
+echo "Добавление /system/xbin/busybox"
+cp -f ../tools/busybox_files/busybox system/xbin/
+cd ..
+
+scripts/add_busybox_to_update_script
+
+exit 0

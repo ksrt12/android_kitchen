@@ -1,0 +1,50 @@
+read do_rename
+echo
+
+if [ "$do_rename" == "n" ]
+then
+ echo "Всё в порядке, ничего не изменится"
+else
+ new_rom_name="$device $coden by $USER"
+ if [ "$current_name" != "$new_rom_name" ]
+ then
+  echo "Назначить новое имя ROM'a автоматически (y/n)? (default: y): "
+  read autoname
+  if [ "$do_rename" != "n" ]
+  then
+   echo "Новое имя ROM'a: $new_rom_name"
+   scripts/set_build_prop_val $id_var $new_rom_name
+  else
+   echo -n "Пожалуйста, введите новое имя: "
+   read new_name
+  fi
+ else
+  echo -n "Пожалуйста, введите новое имя: "
+  read new_name
+ fi
+
+  if [ "$new_name" == "" ]
+  then
+   echo
+   echo "Ошибка: Неверное имя"
+  else
+   scripts/set_build_prop_val $id_var "$new_name"
+  fi
+ fi
+ current_name=`scripts/get_build_prop_val $id_var`
+
+ echo
+ echo
+ echo "В build.prop $id_var теперь установлено в:"
+ echo
+ echo "$current_name"
+
+# if [ "`scripts/get_build_prop_val $id_var2`" != "$current_name" ]; then scripts/set_build_prop_val $id_var2 "$current_name"; fi
+
+ if [ "$current_name" != "$new_name" ] && [ "$current_name" != "$new_rom_name" ]
+ then
+  echo
+  echo "Внимание: Имя не то же самое, как указано"
+ fi
+fi
+

@@ -1,0 +1,64 @@
+################################################################################
+#
+#          Copyright (c) 2011 - dsixda (dislam@rocketmail.com)
+#
+#                         (c) 2015, KSRT12
+#
+#                     (с) 2015, Казаков степан
+#
+# Android Kitchen бесплатна на 100%. Этот файл сценария предназначен только для
+# персонального использования и/или для образовательных целей. Он не может быть
+# использован для денежной выгоды или любой другой цели без разрешения разработчика.
+#
+################################################################################
+
+#
+# This script has two parameters
+#
+# $1 = folder of boot.img (optional)
+# $2 = offset in boot.img to kernel (in decimal) (optional)
+#       - can only be specified if $1 also specified
+#
+
+working_folder=$1
+dec_offset=$2
+
+if [ "$working_folder" == "" ]
+then
+  cd WORKING_*
+  working_folder=`pwd`
+  cd ..
+
+  if [ "$dec_offset" == "" ]
+  then
+    dec_offset=`scripts/get_boot_img_page_size $working_folder`
+  fi  
+fi
+
+
+base_dir=`pwd`
+
+# Check for MT65XX
+cd $working_folder
+
+if [ ! -e boot.img ]
+then
+  cd $base_dir
+  echo "Error: boot.img not found"
+  exit 0
+fi
+
+# Location of "KERNEL" string
+str_offset=$(($dec_offset+8))
+if [ "`od -A n -h -j $str_offset -N 6 boot.img | sed 's/ //g'`" \
+    == "454b4e524c45" ]
+then
+  echo
+  echo "MT65xx kernel header detected"
+  cd $base_dir
+  exit 1
+fi
+
+cd $base_dir
+exit 0
+
